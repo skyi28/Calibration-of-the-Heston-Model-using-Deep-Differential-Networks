@@ -1,0 +1,8 @@
+{
+    "num_hidden": 7,
+    "neurons": 64,
+    "dropout": 0.0,
+    "activation": "swish",
+    "learning_rate": 0.0005,
+    "first_decay_epochs": 50
+}

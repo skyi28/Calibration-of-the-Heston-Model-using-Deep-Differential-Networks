@@ -1,0 +1,14 @@
+Skewness and Kurtosis Summary
+========================================
+
+                 skewness    kurtosis
+C_BID            1.844478    5.650409
+C_ASK            1.837669    5.545776
+UNDERLYING_LAST  1.811806    3.456917
+STRIKE           1.880180    4.202928
+DTE              1.650276    1.757704
+C_IV             6.844034  103.809530
+P_IV             3.240728   20.291460
+Call_Price       1.840987    5.598531
+Moneyness_Log    0.309529   -0.698674
+Tau_Years        1.650276    1.757704

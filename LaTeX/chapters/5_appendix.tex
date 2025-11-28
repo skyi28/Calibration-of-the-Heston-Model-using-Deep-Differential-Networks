@@ -1,0 +1,79 @@
+\subsection{Visual Analysis of Synthetic Data Distributions}
+
+The visual analysis of the synthetic dataset confirms the successful implementation of the sampling strategy and highlights the complexity of the learning task. The data distributions are presented in Figures \ref{fig:synth_stats_part1} through \ref{fig:synth_stats_part3}.
+
+Figure \ref{fig:synth_stats_part1} displays the histograms and box plots for the primary Heston model parameters: kappa, lambda, sigma, rho, v0, and the risk-free rate r. A defining characteristic of these plots is the perfectly flat, uniform distribution of the histograms and the symmetry of the box plots. This visual evidence validates the use of \ac{lhs}, ensuring that the high-dimensional input space is covered evenly without gaps or clustering. This uniformity is essential for training a neural network that generalizes well across the entire parameter domain.
+
+Figure \ref{fig:synth_stats_part2} continues this analysis with the remaining inputs, tau and log-moneyness, which also exhibit perfect uniformity. However, the subsequent columns in Figure \ref{fig:synth_stats_part2} and the plots in Figure \ref{fig:synth_stats_part3} reveal the distributions of the model outputs: the option price and the parameter sensitivities (gradients). In sharp contrast to the inputs, these output variables display highly non-uniform distributions.
+
+The gradients, particularly d\_kappa (Figure \ref{fig:stats_part2}) and d\_v0 (Figure \ref{fig:synth_stats_part3}), are characterized by extreme leptokurtosis, with sharp peaks around zero and heavy tails containing significant outliers. For instance, the box plot for d\_kappa shows a dense concentration of values near zero but extends to extreme outliers, indicating regions of the parameter space where the option price is highly sensitive to changes in the mean-reversion speed. Similarly, d\_sigma exhibits a negative skew, while d\_lambda is positively skewed. These complex, heavy-tailed distributions underscore the challenge of the regression task, as the \ac{ddn} must learn to map uniformly distributed inputs to highly non-linear and peaked output surfaces.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{../data/descriptive_analysis/synthetic_data/combined_statistics_plot_part_1.png}
+    \caption{Distributions of the synthetic Heston input parameters (kappa, lambda, sigma, rho, v0, r). The perfectly flat histograms and symmetric box plots confirm the effectiveness of the Latin Hypercube Sampling method in covering the input space uniformly.}
+    \label{fig:synth_stats_part1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{../data/descriptive_analysis/synthetic_data/combined_statistics_plot_part_2.png}
+    \caption{Distributions for time to maturity and log-moneyness (inputs), followed by option price and gradients for kappa, lambda, and sigma (outputs). Note the transition from uniform inputs to highly skewed and peaked output distributions.}
+    \label{fig:synth_stats_part2}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{../data/descriptive_analysis/synthetic_data/combined_statistics_plot_part_3.png}
+    \caption{Distributions for the gradients with respect to rho and v0. These labels exhibit significant positive skewness and heavy tails, indicating the presence of regions with high parameter sensitivity.}
+    \label{fig:synth_stats_part3}
+\end{figure}
+
+\subsection{Visual Analysis of Historical Data Distributions}
+The histograms and box plots presented in this section provide a granular visual analysis of the filtered historical \ac{aapl} options dataset used for the empirical backtest. These visualizations corroborate the descriptive statistics presented in Section \ref{subsec:descriptive_data_analysis} and highlight the non-normal nature of financial market data.
+
+Figure \ref{fig:stats_part1} displays the distributions for the bid and ask prices, underlying asset price, strike price, days to expiration (DTE), and call implied volatility. A dominant feature across the pricing variables (C\_BID, C\_ASK) is the extreme positive skewness. The histograms show a high concentration of option prices near zero, with a long right tail extending to over \$160. The corresponding box plots confirm this via a dense cluster of outliers in the upper range, representing deep in-the-money contracts or options during periods of high volatility.
+
+The distributions for the underlying asset price and strike price are multimodal. This structure reflects the historical price evolution of AAPL stock over the seven-year observation period, where the stock price spent significant time at different valuation levels (e.g., \$150, \$300). The alignment between the underlying and strike distributions confirms that the dataset maintains a consistent moneyness relationship throughout the timeline.
+
+Figure \ref{fig:stats_part2} extends this analysis to put implied volatility (P\_IV), the mid-market call price, log-moneyness, and time to maturity in years (Tau\_Years). The implied volatility distributions for both calls (Figure A.1) and puts (Figure A.2) are highly leptokurtic. They exhibit a sharp peak around the mean volatility level (approximately 30-35\%) and massive right tails with outliers exceeding 800\% (IV > 8.0). These extreme outliers correspond to market stress events, such as the COVID-19 crash, where uncertainty spiked dramatically.
+
+The distribution of time to maturity (DTE and Tau\_Years) is heavily right-skewed, indicating that the dataset is dominated by short-term options. The histogram shows a rapid decay in frequency as maturity increases, which is consistent with the liquidity profile of the equity options market where trading volume is concentrated in the front months.
+
+Finally, the distribution of Log-Moneyness (Moneyness\_Log) in Figure A.2 stands in contrast to the other variables. It displays a relatively symmetric, bounded distribution centered at zero. This is a direct result of the data filtering protocol which restricted the dataset to options with log-moneyness between -0.25 and 0.25. The absence of outliers in the moneyness box plot confirms that the filtering logic was applied correctly, ensuring that the calibration focused strictly on the liquid, near-the-money region of the volatility surface.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{../data/descriptive_analysis/historic_aapl_data/combined_statistics_plot_part_1.png}
+    \caption{Histograms and box plots for Call Bid, Call Ask, Underlying Price, Strike Price, DTE, and Call Implied Volatility. The plots reveal significant right-skewness in pricing and volatility variables, and a multimodal distribution for the underlying asset.}
+    \label{fig:stats_part1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{../data/descriptive_analysis/historic_aapl_data/combined_statistics_plot_part_2.png}
+    \caption{Histograms and box plots for Put Implied Volatility, Call Mid-Price, Log-Moneyness, and Time to Maturity (Years). Note the heavy tails in the volatility distribution and the symmetric, bounded nature of the log-moneyness resulting from data filtering.}
+    \label{fig:stats_part2}
+\end{figure}
+
+\subsection{Longitudinal Analysis of Calibrated Parameter Stability}
+
+Figure \ref{fig:parameters} illustrates the daily evolution of the five calibrated Heston parameters ($\kappa, \lambda, \sigma, \rho, v_0$) over the full backtesting period from 2016 to 2023. This time-series analysis provides critical insights into the stability of the calibration and the model's response to changing market regimes.
+
+The most financially intuitive behavior is observed in the initial variance parameter ($v_0$), displayed in the bottom panel. It acts as a robust proxy for market fear, exhibiting low, mean-reverting behavior during calm periods (2016-2017) and sharp, distinct spikes during stress events. The most prominent spike corresponds to the COVID-19 crash in March 2020, where $v_0$ surged to approximately 0.7, correctly reflecting the explosion in spot volatility. Smaller spikes are visible during the volatility event of early 2018 and the market correction of 2022.
+
+The long-run variance ($\lambda$) remains remarkably stable for the majority of the period, hovering between 0.05 and 0.10. This indicates that despite short-term fluctuations in spot variance, the model's view of the long-term equilibrium volatility remained anchored. A notable exception is the singular, extreme spike in early 2018, likely associated with the "Volmageddon" event, where the sudden collapse of short-volatility strategies momentarily disjointed the long-term expectation.
+
+The correlation parameter ($\rho$) generally adheres to the empirical leverage effect, staying in negative territory between -0.4 and -0.8. However, a regime shift is observable during the 2020-2021 recovery period. During this phase, $\rho$ frequently hits the upper boundary of 0.0, and the volatility of volatility ($\sigma$) simultaneously hits its upper boundary of 1.0. This boundary-hitting behavior suggests that the standard Heston model struggled to accommodate the specific smile dynamics of that period---likely characterized by steep skews and high prices for far-out-of-the-money calls---without pushing its parameters to the limits of the constrained search space.
+
+Finally, the mean reversion speed ($\kappa$) exhibits high variance and noise throughout the entire sample, oscillating rapidly between 1.0 and 4.0. This is a well-documented phenomenon in Heston calibration, where $\kappa$ often acts as a slack parameter, absorbing residual fitting errors that the other parameters cannot capture.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{../plots/plot_6_parameters.png}
+    \caption{Daily calibrated Heston parameters over the backtesting period (2016-2023). The plots reveal both intuitive market responses (e.g., spikes in $v_0$ during crises) and challenges in model fitting (e.g., boundary-hitting behavior of $\rho$ and $\sigma$ during 2020-2021).}
+    \label{fig:parameters}
+\end{figure}
+
+\subsection{Data Source Files for Historical AAPL Options}
+The historical \ac{aapl} options data utilized in this study is sourced from two comprehensive CSV files obtained from Kaggle. These files encompass daily option quotes spanning from January 2016 to December 2023. The files can be downloaded from the following link: https://www.kaggle.com/datasets/kylegraupe/aapl-options-data-2016-2020

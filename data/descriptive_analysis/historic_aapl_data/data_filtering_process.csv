@@ -1,0 +1,5 @@
+Step,Description,Remaining Samples,Removed,Remaining %
+1. Raw Data Extraction,Initial import from CSVs,1562105,0,100.0
+2. Price Filter,Call Price > $0.50,1236446,325659,79.15
+3. Maturity Filter,Time to Maturity > 5.00 Days,1234300,2146,79.02
+4. Moneyness Filter,"Log Moneyness [-0.25, 0.25]",643953,590347,41.22

@@ -1,0 +1,235 @@
+\documentclass[12pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage[a4paper, left=3cm, right=3cm, top=2cm, bottom=2cm]{geometry}
+\usepackage{threeparttable}
+\usepackage{makecell}
+\usepackage{multirow}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{csquotes}
+\usepackage{caption}
+\usepackage{pgffor}
+\usepackage{acro}
+\usepackage{tikz}
+\usetikzlibrary{
+    shapes.geometric,
+    positioning,
+    arrows.meta,
+    calc,
+    fit,
+}
+
+\usepackage[style=apa, backend=biber]{biblatex}
+\addbibresource{references.bib}
+
+% Page layout
+\setlength{\parskip}{1em}
+\setlength{\parindent}{0em}
+
+% Header and Footer settings
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{Calibration of the Heston Model using Neural Networks}
+
+% Section title spacing
+\titlespacing*{\section}
+  {0pt}      % left indent
+  {2pt}      % space before
+  {0pt}      % space after
+
+\titlespacing*{\subsection}
+  {0pt}
+  {2pt}
+  {0pt}
+
+% Listings settings
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!10},
+  frame=single,
+  breaklines=true,
+  captionpos=b,
+  language=Python
+}
+
+% Acroynms
+\DeclareAcronym{aapl}{
+    short={AAPL},
+    long={Apple Inc.}
+}
+\DeclareAcronym{ai}{
+	short={AI},
+	long={Artificial Intelligence}
+}
+\DeclareAcronym{atm}{
+	short={ATM},
+	long={At-the-Money}
+}
+\DeclareAcronym{ddn}{
+    short={DDN},
+    long={Deep Differential Network}
+}
+\DeclareAcronym{itm}{
+    short={ITM},
+    long={In-the-Money}
+}
+\DeclareAcronym{lhs}{
+    short={LHS},
+    long={Latin Hypercube Sampling}
+}
+\DeclareAcronym{mse}{
+    short={MSE},
+    long={Mean Squared Error}
+}
+\DeclareAcronym{mre}{
+    short={MRE},
+    long={Mean Relative Error}
+}
+\DeclareAcronym{otm}{
+    short={OTM},
+    long={Out-of-the-Money}
+}
+
+% Actual Content
+\begin{document}
+
+% Title Page
+\begin{titlepage}
+	\centering
+	\includegraphics[width=0.4\textwidth]{images/zhaw_logo.png}
+	\vfill
+	{\Huge\bfseries Calibration of the Heston Model using Neural Networks\par}
+	\vspace{1.0cm}
+	{\Large Machine Learning and Deep Learning\par}
+	\vspace{1.0cm}
+	\vfill
+	\begin{minipage}{0.8\textwidth}
+		\large
+		\begin{tabular}{@{}ll}
+			\textbf{Authors:}       & B. Grimus \& A. Mosleh-Tehrani \\
+			\textbf{Study Program:} & Banking \& Finance             \\
+			\textbf{Supervisor:}    & Dr. Fazlija Bledar             \\
+		\end{tabular}
+	\end{minipage}
+	\vfill
+	{\large
+		ZHAW School of Management and Law\par
+		Submitted on: 01. December 2025\par
+	}
+\end{titlepage}
+\clearpage
+
+% Abstract
+\pagenumbering{gobble}
+\section*{Abstract}
+\input{chapters/0_abstract}
+\clearpage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\newpage
+
+% Abbreviations
+\printacronyms
+% \newpage
+
+% List of Figures
+\listoffigures
+% \newpage
+
+% List of Tables
+\listoftables
+\newpage
+
+% Switch page numbering from roman to arabic
+\pagenumbering{arabic}
+
+% Chapters
+\section{Introduction}
+\label{sec:introduction}
+\input{chapters/1_introduction}
+% \newpage
+
+\section{Methodology}
+\label{sec:methodology}
+\input{chapters/2_methodology}
+% \newpage
+
+\section{Results}
+\label{sec:results}
+\input{chapters/3_results}
+% \newpage
+
+\section{Discussion}
+\label{sec:discussion}
+\input{chapters/4_discussion}
+\newpage
+
+\printbibliography[heading=bibintoc]
+\newpage
+
+\section*{Use of Artificial Intelligence}
+\ac{ai} was employed in the context of this study to support the authors in various auxiliary and editorial tasks. Its use was strictly limited to non-critical and non-confidential aspects of the research, coding and writing process. The primary purpose of employing \ac{ai} tools was to enhance the overall clarity, coherence, and grammatical accuracy of the text, ensuring a consistent academic writing style. Through text proposals and linguistic adjustments, the readability of the thesis was improved, allowing for a clearer communication of complex concepts to the reader. \ac{ai} was additionally utilized for translation purposes between English and German, ensuring linguistic precision in both directions.
+
+Furthermore, \ac{ai}-assisted summarization techniques were employed to help the author better understand complex theoretical or methodological concepts by providing concise explanatory summaries. These summaries served solely as a comprehension aid and were not directly included in the final version of the thesis without the author's verification and adaptation.
+
+In the technical part of the thesis, \ac{ai} was used to generate and refine \texttt{Python} code fragments, as well as to enhance existing code written by the author in terms of readability and computational efficiency. Code completion tools were occasionally used to accelerate programming during the development process. All generated or optimized code was manually integrated into the code base following review and validation by the author. \ac{ai} tools were also employed for the generation of \texttt{LaTeX} table code structures, while the underlying content was entirely created by the author, and for querying specific \texttt{LaTeX} commands to ensure accurate formatting. In addition, \ac{ai} was used to generate concise and descriptive \texttt{Git} commit messages for efficient version control and documentation of code changes.
+
+At no point were personal data, business or trade secrets, or any proprietary data, particularly data downloaded from Bloomberg, processed or shared with any \ac{ai} tool. The handling of such data remained entirely under the author's control and within secure environments compliant with data protection and confidentiality standards.
+
+All textual recommendations and code suggestions provided by \ac{ai} tools were thoroughly reviewed and verified by the author for technical correctness and factual accuracy. This included empirical testing of all code outputs to ensure functionality and to prevent the inclusion of any erroneous or fabricated content, often referred to as hallucinations. The authors assumes full responsibility for the correctness and validity of all content and code presented in this thesis.
+
+\ac{ai} was explicitly not used beyond the purposes listed above. The authors assumes full responsibility for the correctness and validity of all content and code presented in this study. Table \ref{tab:list_of_ai_tools} provides an overview of the specific \ac{ai} models utilized, including their version information and intended use cases within the scope of this study.
+% Table of AI Tools Used
+\captionsetup{list=no}
+\begin{table}[H]
+	\centering
+	\begin{threeparttable}
+		\caption{\textbf{Overview of AI Models Utilized}}
+		\label{tab:list_of_ai_tools}
+		\small
+		\begin{tabular}{p{4cm} p{12cm}}
+			\toprule
+			\textbf{AI Model}             & \textbf{Citation Information}                                                                                                                                                                                                                                                                                                                                                                                                      \\
+			\midrule
+			ChatGPT (GPT-5 Model)         &
+			OpenAI, \textit{ChatGPT (GPT-5 Model)}, 2025, Version: GPT-5, Used for text refinement including improving grammar, writing style and consistency as well as text proposals. Furthermore, it was used to create \texttt{LaTeX} table structures and or querying specific \texttt{LaTeX} commands to ensure accurate formatting, \url{https://chat.openai.com}                                                                                                        \\
+
+			ChatGPT (GPT-5 Thinking Mini) &
+			OpenAI, \textit{ChatGPT (GPT-5 Thinking Mini Model)}, 2025, Version: GPT-5 Thinking Mini, Used for text refinement including improving grammar, writing style and consistency as well as text proposals. Furthermore, it was used to create \texttt{LaTeX} table structures and or querying specific \texttt{LaTeX} commands to ensure accurate formatting. Note this is the fallback model if the GPT-5 model free quota is exceeded, \url{https://chat.openai.com} \\
+
+			Gemini 2.5 Pro                &
+			Google DeepMind, \textit{Gemini 2.5 Pro}, 2025, Version: 2.5 Pro, Used for the generation and refinement of code fragments as well as for enhancement of existing code written by the author in terms of readability and computational efficiency. Furthermore it was used to summarize complex theoretical concepts, \url{https://gemini.google.com}                                                                                                              \\
+
+			Windsurf Chat (Llama 3.1 70B) &
+			Codeium / Windsurf, \textit{Windsurf Chat Model (based on Meta’s Llama 3.1 70B)}, 2025, Version: Llama 3.1 70B, Used for coding assistance in the IDE as well as for the creation of Git commit messages, \url{https://codeium.com/windsurf}                                                                                                                                                                                                                       \\
+
+			DeepL Translator              &
+			DeepL SE, \textit{DeepL Translator}, 2025, Version: 2025 Release, Used for high-quality translation and linguistic consistency checking, \url{https://www.deepl.com}                                                                                                                                                                                                                                                                                               \\
+			\bottomrule
+		\end{tabular}
+	\end{threeparttable}
+\end{table}
+
+% Appendix
+\newpage
+\section{Appendix}
+\label{sec:appendix}
+\input{chapters/5_appendix}
+\newpage
+
+\end{document}

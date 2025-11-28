@@ -1,0 +1,13 @@
+LaTeX/*
+!LaTeX/chapters/
+!LaTeX/images/
+!LaTeX/main.tex
+!LaTeX/references.bib
+!LaTeX/main.pdf
+
+tuning_results
+
+__pycache__/
+model/__pycache__
+
+presentation
