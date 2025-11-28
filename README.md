@@ -1,5 +1,23 @@
 # Deep Differential Networks for Heston Model Calibration
 
+**⚠️ Important:** This repository uses **Git Large File Storage (LFS)** to manage the large datasets required for training (stored in `data/kaggle/`).
+
+To ensure you download the actual data files (100MB+) rather than small pointer files, you must have Git LFS installed.
+
+**How to clone correctly:**
+1.  **Install Git LFS** (if you haven't already):
+    ```bash
+    git lfs install
+    ```
+2.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/skyi28/Calibration-of-the-Heston-Model-using-Deep-Differential-Networks.git](https://github.com/skyi28/Calibration-of-the-Heston-Model-using-Deep-Differential-Networks.git)
+    ```
+3.  **Troubleshooting:** If the files in `data/kaggle/` appear to be only 1KB in size, run this command inside the repository folder to fetch the real data:
+    ```bash
+    git lfs pull
+    ```
+
 ## 1. Overview
 
 This project implements a state-of-the-art **Deep Differential Network (DDN)** to solve the calibration problem for the Heston Stochastic Volatility Model. 
