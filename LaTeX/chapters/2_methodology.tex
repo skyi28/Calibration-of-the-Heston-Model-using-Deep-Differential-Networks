@@ -10,7 +10,7 @@ The Heston model, introduced by \textcite{heston1993}, is a stochastic volatilit
 
 Under the risk-neutral measure $\mathbb{Q}$, the dynamics of the asset price, $S_t$, and its instantaneous variance, $v_t$, are described by a system of two correlated stochastic differential equations:
 \begin{equation}
-    dS_t = r S_t dt + \sqrt{v_t} S_t dW_t^S
+    dS_t = (r_t - q) S_t dt + \sqrt{v_t} S_t dW_t^S
 \end{equation}
 \begin{equation}
     dv_t = \kappa (\lambda - v_t) dt + \sigma \sqrt{v_t} dW_t^v
@@ -27,7 +27,8 @@ where the two standard Wiener processes, $W_t^S$ and $W_t^v$, have a constant co
         \midrule
         $S_t$ & Price of the underlying asset at time $t$. \\
         $v_t$ & Instantaneous variance of the asset price at time $t$. \\
-        $r$ & The constant, continuously compounded risk-free interest rate. \\
+        $r_t$ & The continuously compounded risk-free interest rate (deterministic). \\
+        $q$ & The implied dividend yield of the underlying asset. \\
         $\kappa$ & The rate of mean reversion of the variance process. \\
         $\lambda$ & The long-run average variance. \\
         $\sigma$ & The volatility of the variance process (volatility of volatility). \\
@@ -40,7 +41,7 @@ where the two standard Wiener processes, $W_t^S$ and $W_t^v$, have a constant co
 
 The Heston model admits a semi-analytical solution for the price of a European call option, which can be computed by leveraging the inverse Fourier transform of the model's characteristic function. This approach avoids the need for computationally intensive Monte Carlo simulations. The price of a European call option, $C$, is a function of the initial state and model parameters, denoted as $C(S_0, K, r, \tau; \theta_H)$, where $\theta_H = \{\kappa, \lambda, \sigma, \rho, v_0\}$ is the set of unobservable Heston parameters. The pricing formula is expressed in a form analogous to the Black-Scholes model:
 \begin{equation}
-    C(S_0, K, r, \tau; \theta_H) = S_0 \Pi_1 - K e^{-r\tau} \Pi_2
+    C(S_0, K, r, q, \tau; \theta_H) = S_0 e^{-q\tau} \Pi_1 - K e^{-r\tau} \Pi_2
 \end{equation}
 The terms $\Pi_1$ and $\Pi_2$ represent risk-neutral probabilities. In the Heston framework, they are computed via numerical integration of the characteristic function of the log-asset price:
 \begin{equation}
@@ -49,7 +50,7 @@ The terms $\Pi_1$ and $\Pi_2$ represent risk-neutral probabilities. In the Hesto
 \begin{equation}
     \Pi_2 = \frac{1}{2} + \frac{1}{\pi} \int_0^\infty \text{Re}\left[ \frac{e^{-iu k} \phi_\tau(u)}{iu} \right] du
 \end{equation}
-where $\phi_\tau(u)$ is the characteristic function of the logarithm of the asset price at maturity, $k = \ln(K)$, and $i$ is the imaginary unit.
+where $\phi_\tau(u)$ is the characteristic function of the logarithm of the asset price at maturity, incorporating the risk-neutral drift $(r - q)$, $k = \ln(K)$, and $i$ is the imaginary unit.
 
 \begin{table}[H]
     \centering
@@ -62,6 +63,8 @@ where $\phi_\tau(u)$ is the characteristic function of the logarithm of the asse
         $C$ & Price of the European call option. \\
         $S_0$ & Initial price of the underlying asset. \\
         $K$ & Strike price of the option. \\
+        $r$ & The continuously compounded risk-free interest rate. \\
+        $q$ & The continuous dividend yield. \\
         $\tau$ & Time to maturity of the option, in years. \\
         $\theta_H$ & The set of Heston parameters $\{\kappa, \lambda, \sigma, \rho, v_0\}$. \\
         $\Pi_1, \Pi_2$ & Risk-neutral probabilities derived from the characteristic function. \\
@@ -78,45 +81,45 @@ where $\phi_\tau(u)$ is the characteristic function of the logarithm of the asse
 \subsection{Synthetic Data Generation}
 A large-scale synthetic dataset was generated to serve as the training corpus for the \ac{ddn}. This dataset is designed to approximate the Heston pricing function over a wide and diverse parameter space.
 
-To ensure an efficient and uniform coverage of the high-dimensional parameter space, \ac{lhs} introduced by \textcite{mckay1979latinhypercubesampling} was employed. This quasi-random sampling technique divides each parameter's domain into equally probable intervals, ensuring that samples are drawn from all regions of the input space. The domains for the Heston parameters and market variables were defined as follows: $\kappa \in [0.01, 5.0]$, $\lambda \in [0.0, 1.0]$, $\sigma \in [0.1, 1.0]$, $\rho \in [-0.99, 0.0]$, $v_0 \in [0.01, 1.0]$, $r \in [-0.03, 0.1]$, $\tau \in [5/365, 2.5]$, and log-moneyness $\ln(K/S_0) \in [-1.0, 1.0]$. A total of 200,000 unique parameter vectors were generated.
+To ensure an efficient and uniform coverage of the high-dimensional parameter space, \ac{lhs} introduced by \textcite{mckay1979latinhypercubesampling} was employed. This quasi-random sampling technique divides each parameter's domain into equally probable intervals, ensuring that samples are drawn from all regions of the input space. The domains for the Heston parameters and market variables were defined as follows: $\kappa \in [0.01, 5.0]$, $\lambda \in [0.0, 1.0]$, $\sigma \in [0.1, 1.0]$, $\rho \in [-0.99, 0.0]$, $v_0 \in [0.01, 1.0]$, $r \in [-0.03, 0.1]$, $q \in [0.00, 0.05]$, $\tau \in [5/365, 2.5]$, and log-moneyness $\ln(K/S_0) \in [-1.0, 1.0]$. A total of 200,000 unique parameter vectors were generated.
 
-For each generated parameter vector, the corresponding ground-truth European call option price was computed using the \texttt{AnalyticHestonEngine} from the open-source \texttt{QuantLib} financial library. Subsequently, the first-order partial derivatives of the option price with respect to each of the five Heston parameters ($\partial C / \partial\kappa, \partial C / \partial\lambda, \dots, \partial C / \partial v_0$) were numerically approximated using a central finite difference scheme. The final dataset consists of 200,000 samples, each containing an 8-dimensional feature vector and a 6-dimensional label vector (one price and five gradients).
+For each generated parameter vector, the corresponding ground-truth European call option price was computed using the \texttt{AnalyticHestonEngine} from the open-source \texttt{QuantLib} financial library. Subsequently, the first-order partial derivatives of the option price with respect to each of the five Heston parameters ($\partial C / \partial\kappa, \partial C / \partial\lambda, \dots, \partial C / \partial v_0$) were numerically approximated using a central finite difference scheme. The final dataset consists of 200,000 samples, each containing an 9-dimensional feature vector and a 6-dimensional label vector (one price and five gradients).
 
 \subsection{Descriptive Data Analysis}
 \label{subsec:descriptive_data_analysis}
 A descriptive statistical analysis was performed on both the generated synthetic dataset and the historical \ac{aapl} options data to understand their underlying distributions and characteristics. This analysis informs the data filtering protocol and helps validate the representativeness of the synthetic dataset.
 
-The statistics for the synthetic dataset, detailed in Tables \ref{tab:synthetic_inputs} and \ref{tab:synthetic_outputs}, reflect the properties of the \ac{lhs} method. For all input parameters, the mean is closely aligned with the median (50th percentile), skewness is approximately zero, and kurtosis is approximately -1.20, which is characteristic of a uniform distribution. This confirms that the sampling strategy successfully generated a well-distributed and unbiased representation of the parameter space. In contrast, the output labels, particularly the parameter gradients, exhibit significant positive skewness and high kurtosis (leptokurtosis). For instance, the gradient with respect to kappa ($\text{d}\_\kappa$) shows a skewness of 5.32 and a kurtosis of 82.82. This indicates that the sensitivities of the Heston model are not uniformly distributed and possess fat tails with extreme outliers, a critical feature for the \ac{ddn} to learn.
+The statistics for the synthetic dataset, detailed in Tables \ref{tab:synthetic_inputs} and \ref{tab:synthetic_outputs}, reflect the properties of the \ac{lhs} method. For all input parameters, the mean is closely aligned with the median (50th percentile), skewness is approximately zero, and kurtosis is approximately -1.20, which is characteristic of a uniform distribution. This confirms that the sampling strategy successfully generated a well-distributed and unbiased representation of the parameter space. In contrast, the output labels, particularly the parameter gradients, exhibit significant positive skewness and high kurtosis (leptokurtosis). For instance, the gradient with respect to kappa ($\text{d}\_\kappa$) shows a skewness of 4.76 and a kurtosis of 70.81. This indicates that the sensitivities of the Heston model are not uniformly distributed and possess fat tails with extreme outliers, a critical feature for the \ac{ddn} to learn.
 
 \begin{table}[H]
     \centering
     \caption{Descriptive Statistics for Synthetic Dataset Input Parameters.}
     \label{tab:synthetic_inputs}
     \begin{threeparttable}
-    \begin{tabular}{lrrrr}
+    \begin{tabular}{lrrrrr}
         \toprule
-        Statistic & $\kappa$ & $\lambda$ & $\sigma$ & $\rho$ \\
+        Statistic & $\kappa$ & $\lambda$ & $\sigma$ & $\rho$ & $v_0$ \\
         \midrule
-        Mean & 2.51 & 0.50 & 0.55 & -0.49 \\
-        Std. Dev. & 1.44 & 0.29 & 0.26 & 0.29 \\
-        Min & 0.01 & 0.00 & 0.10 & -0.99 \\
-        25\% & 1.26 & 0.25 & 0.32 & -0.74 \\
-        50\% & 2.51 & 0.50 & 0.55 & -0.49 \\
-        75\% & 3.75 & 0.75 & 0.77 & -0.25 \\
-        Max & 5.00 & 1.00 & 1.00 & 0.00 \\
-        Skewness & 0.00 & 0.00 & 0.00 & -0.00 \\
-        Kurtosis & -1.20 & -1.20 & -1.20 & -1.20 \\
+        Mean & 2.50 & 0.50 & 0.55 & -0.49 & 0.51 \\
+        Std. Dev. & 1.44 & 0.29 & 0.26 & 0.29 & 0.29 \\
+        Min & 0.01 & 0.00 & 0.10 & -0.99 & 0.01 \\
+        25\% & 1.26 & 0.25 & 0.32 & -0.74 & 0.26 \\
+        50\% & 2.50 & 0.50 & 0.55 & -0.49 & 0.51 \\
+        75\% & 3.75 & 0.75 & 0.77 & -0.25 & 0.75 \\
+        Max & 5.00 & 1.00 & 1.00 & -0.00 & 1.00 \\
+        Skewness & 0.00 & -0.00 & 0.00 & -0.00 & -0.00 \\
+        Kurtosis & -1.20 & -1.20 & -1.20 & -1.20 & -1.20 \\
         \midrule
-        \textbf{Statistic} & $v_0$ & $r$ & $\tau$ & $\log(K/S_0)$ \\
+        \textbf{Statistic} & $r$ & $q$ & $\tau$ & $\log(K/S_0)$ \\
         \midrule
-        Mean & 0.51 & 0.03 & 1.26 & -0.00 \\
-        Std. Dev. & 0.29 & 0.04 & 0.72 & 0.58 \\
-        Min & 0.01 & -0.03 & 0.01 & -1.00 \\
-        25\% & 0.26 & 0.00 & 0.64 & -0.50 \\
-        50\% & 0.51 & 0.03 & 1.26 & -0.00 \\
-        75\% & 0.75 & 0.07 & 1.88 & 0.50 \\
-        Max & 1.00 & 0.10 & 2.50 & 1.00 \\
-        Skewness & -0.00 & 0.00 & -0.00 & 0.00 \\
+        Mean & 0.04 & 0.03 & 1.26 & -0.00 \\
+        Std. Dev. & 0.04 & 0.01 & 0.72 & 0.58 \\
+        Min & -0.03 & 0.00 & 0.01 & -1.00 \\
+        25\% & 0.00 & 0.01 & 0.64 & -0.50 \\
+        50\% & 0.04 & 0.03 & 1.26 & -0.00 \\
+        75\% & 0.07 & 0.04 & 1.88 & 0.50 \\
+        Max & 0.10 & 0.05 & 2.50 & 1.00 \\
+        Skewness & -0.00 & -0.00 & -0.00 & 0.00 \\
         Kurtosis & -1.20 & -1.20 & -1.20 & -1.20 \\
         \bottomrule
     \end{tabular}
@@ -133,17 +136,17 @@ The statistics for the synthetic dataset, detailed in Tables \ref{tab:synthetic_
     \begin{threeparttable}
     \begin{tabular}{lrrrrrr}
         \toprule
-        Statistic & Price & $\text{d}\_\kappa$ & $\text{d}\_\lambda$ & $\text{d}\_\sigma$ & $\text{d}\_\rho$ & $\text{d}\_v_0$ \\
+        Statistic & Price & $\text{d}\_\kappa$ & $\text{d}\_\lambda$ & $\text{d}\_\sigma$ & $\text{d}\_\rho$ & $\text{d}\_{v_0}$ \\
         \midrule
-        Mean & 0.32 & 0.00 & 0.14 & -0.01 & 0.01 & 0.08 \\
-        Std. Dev. & 0.21 & 0.03 & 0.13 & 0.02 & 0.02 & 0.07 \\
-        Min & 0.00 & -0.28 & 0.00 & -0.33 & -0.02 & 0.00 \\
-        25\% & 0.13 & -0.00 & 0.03 & -0.02 & -0.00 & 0.03 \\
-        50\% & 0.32 & 0.00 & 0.11 & -0.01 & 0.00 & 0.06 \\
-        75\% & 0.51 & 0.01 & 0.21 & 0.00 & 0.02 & 0.10 \\
-        Max & 0.78 & 0.90 & 1.93 & 0.03 & 0.36 & 1.31 \\
-        Skewness & 0.07 & 5.32 & 1.78 & -2.86 & 2.88 & 2.53 \\
-        Kurtosis & -1.27 & 82.82 & 6.87 & 13.13 & 13.86 & 13.01 \\
+        Mean & 0.30 & 0.00 & 0.13 & -0.01 & 0.01 & 0.07 \\
+        Std. Dev. & 0.20 & 0.03 & 0.12 & 0.02 & 0.02 & 0.07 \\
+        Min & 0.00 & -0.30 & -0.00 & -0.32 & -0.02 & -0.00 \\
+        25\% & 0.11 & -0.00 & 0.03 & -0.02 & -0.00 & 0.03 \\
+        50\% & 0.29 & 0.00 & 0.11 & -0.01 & 0.00 & 0.06 \\
+        75\% & 0.48 & 0.01 & 0.20 & 0.00 & 0.02 & 0.10 \\
+        Max & 0.78 & 0.75 & 2.83 & 0.04 & 0.32 & 1.09 \\
+        Skewness & 0.10 & 4.76 & 1.72 & -2.88 & 2.66 & 2.47 \\
+        Kurtosis & -1.27 & 70.81 & 7.31 & 13.57 & 11.31 & 12.23 \\
         \bottomrule
     \end{tabular}
     \begin{tablenotes}
@@ -165,9 +168,9 @@ The heatmap reveals several key structural properties of the dataset that are cr
 
 \textit{Input Parameter Independence:} A defining feature is the block of near-zero correlations among all input parameters in the upper-left quadrant of the matrix. This is a direct and desirable consequence of the \ac{lhs} method, which is designed to generate input vectors that are orthogonal, ensuring that the \ac{ddn} can learn the effect of each parameter independently without multicollinearity issues.
 
-\textit{Primary Price Drivers:} The option price is most strongly influenced by moneyness, with a correlation of -0.89. This confirms the fundamental principle that a call option's value decreases as it becomes more out-of-the-money. The next most significant factor is the time to maturity (tau), with a positive correlation of 0.31, reflecting the option's time value. The variance parameters (lambda and v0) exhibit weaker positive linear relationships with the price.
+\textit{Primary Price Drivers:} The option price is most strongly influenced by moneyness, with a correlation of -0.90. This confirms the fundamental principle that a call option's value decreases as it becomes more \ac{otm}. The next most significant factor is the time to maturity (tau), with a positive correlation of 0.27, reflecting the option's time value. The variance parameters (lambda and v0) exhibit weaker positive linear relationships with the price.
 
-\textit{Gradient Interdependencies:} The most complex relationships are observed among the output gradients (the lower-right quadrant). There are strong correlations between several gradients, such as the negative correlation of -0.73 between the sensitivity to vol-of-vol (d\_sigma) and the sensitivity to correlation (d\_rho). Furthermore, the gradients are highly correlated with the input variables. For instance, the sensitivity to long-run variance (d\_lambda) has a strong positive correlation of 0.63 with tau, indicating that the model's sensitivity to this parameter increases with the option's maturity.
+\textit{Gradient Interdependencies:} The most complex relationships are observed among the output gradients (the lower-right quadrant). There are strong correlations between several gradients, such as the negative correlation of -0.73 between the sensitivity to vol-of-vol (d\_sigma) and the sensitivity to correlation (d\_rho). Furthermore, the gradients are highly correlated with the input variables. For instance, the sensitivity to long-run variance (d\_lambda) has a strong positive correlation of 0.64 with tau, indicating that the model's sensitivity to this parameter increases with the option's maturity.
 
 This analysis demonstrates that while the inputs to the model are independent by design, the outputs (the price and its sensitivities) form a highly structured and interdependent surface.
 
@@ -276,7 +279,7 @@ As expected, the call price exhibits a perfect correlation of 1.00 with the bid 
 
 \textit{Market Structure:} A very high positive correlation of 0.95 is observed between the underlying price and the strike. This does not imply a direct pricing relationship but is an artifact of the long time-series; as the price of \ac{aapl} stock trended upwards from 2016 to 2023, the range of available strike prices listed on the exchange shifted higher in tandem.
 
-\textit{Volatility Structure:} The implied volatilities for calls (C\_IV) and puts (P\_IV) are highly correlated (0.86), indicating that they are driven by the same underlying market sentiment and uncertainty. Furthermore, the negative correlation of -0.32 between the implied volatility of call options and the log-moneyness provides clear evidence of the well-documented volatility skew in equity markets, where implied volatility tends to decrease for out-of-the-money calls (i.e., as log-moneyness increases).
+\textit{Volatility Structure:} The implied volatilities for calls (C\_IV) and puts (P\_IV) are highly correlated (0.86), indicating that they are driven by the same underlying market sentiment and uncertainty. Furthermore, the negative correlation of -0.32 between the implied volatility of call options and the log-moneyness provides clear evidence of the well-documented volatility skew in equity markets, where implied volatility tends to decrease for \ac{otm} calls (i.e., as log-moneyness increases).
 
 Overall, the correlation analysis confirms that the variables within the historical dataset exhibit financially sound and predictable relationships, providing a robust basis for the subsequent calibration experiments.
 
@@ -287,7 +290,7 @@ The \ac{ddn} was trained using a differential learning approach, also known as S
 \begin{equation}
     L_{\text{total}} = \alpha \cdot L_{\text{price}} + L_{\text{gradients}}
 \end{equation}
-where $\alpha=10.0$ is a weighting factor, $L_{\text{price}}$ is the \ac{mse} between the predicted and true prices, and $L_{\text{gradients}}$ is the \ac{mse} between the predicted and true parameter gradients.
+where $\alpha=10.0$ is a weighting factor, $L_{\text{price}}$ is the \ac{mse} between the predicted and true prices, and $L_{\text{gradients}}$ is the \ac{mse} between the predicted and true parameter gradients. The weightening factor $\alpha$ was introduced to balance the contributions of the two loss components, ensuring that the model adequately learns both the pricing function and its sensitivities.
 
 \begin{table}[H]
     \centering
@@ -332,11 +335,11 @@ Prior to training, the input features were scaled to the range $[-1, 1]$ and the
 To validate the performance of the trained \ac{ddn} in a realistic setting, a comprehensive historical backtest was conducted on a dataset of call and put options on \ac{aapl} stock, spanning the period from January 2016 to March 2023. On each trading day, the raw data was subjected to the filtering protocol detailed in Section \ref{subsec:descriptive_data_analysis} to isolate a stable subset of liquid options for analysis. The backtest then proceeded on a day-by-day basis, executing the following calibration and evaluation procedure:
 
 \begin{enumerate}
-    \item \textit{Market-Implied Rate Calculation:} The risk-free rate net of the dividend yield ($r-q$) was dynamically estimated for each day. This was achieved by applying the put-call parity theorem to a set of liquid, at-the-money options and solving for the implied rate, $r_{\text{implied}}$. The median of the calculated rates from this set was used as the daily input. The formula used is:
+    \item \textit{Interest Rate and Dividend Yield Estimation:} The risk-free interest rate ($r$) was obtained by linearly interpolating the daily Treasury yield curve to match the specific time to maturity ($\tau$) of each option. Subsequently, the continuous dividend yield ($q$) was dynamically estimated for each day by applying the put-call parity theorem to a set of liquid, \ac{atm} options. The median of the calculated yields from this set was used as the daily input. The dividend yield is derived as:
     \begin{equation}
-        r_{\text{implied}} = -\frac{1}{\tau} \ln\left(\frac{S_0 - C_{\text{market}} + P_{\text{market}}}{K}\right)
+        q = -\frac{1}{\tau} \ln\left(\frac{C_{\text{market}} - P_{\text{market}} + K e^{-r\tau}}{S_0}\right)
     \end{equation}
-    This dynamic estimation ensures the model adapts to prevailing market interest rate and dividend expectations.
+    This approach explicitly decouples the risk-free rate from the dividend yield, ensuring that the model correctly handles both the drift adjustment and the discounting of payoffs.
 
     \item \textit{Data Partitioning:} On each trading day, the filtered option chain was independently partitioned into a calibration set (80\% of contracts) and a held-out test set (20\%) by sampling the options randomly.
 

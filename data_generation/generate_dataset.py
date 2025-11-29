@@ -83,7 +83,7 @@ def calculate_price_and_grads(params: dict, epsilon: float = 1e-4) -> Tuple[dict
         # Risk-free rate curve (Flat forward assumption)
         rate_h = ql.YieldTermStructureHandle(ql.FlatForward(today, params['r'], day_count))
         # Dividend yield (Assumed 0 for this dataset)
-        div_h = ql.YieldTermStructureHandle(ql.FlatForward(today, 0.0, day_count))
+        div_h = ql.YieldTermStructureHandle(ql.FlatForward(today, params['q'], day_count))
         
         # Initialize Stochastic Process
         # Note: QuantLib Heston Signature is (RiskFree, Div, Spot, v0, kappa, theta, sigma, rho).
@@ -187,9 +187,9 @@ def main(n_samples: int =200_000) -> None:
         if res:
             p, price, grads = res
             # Construct Feature Vector (Inputs)
-            # [Kappa, Theta(lambda), VolOfVol, Rho, v0, RiskFreeRate, TimeToMaturity, Moneyness]
+            # [Kappa, Theta(lambda), VolOfVol, Rho, v0, RiskFreeRate, DividenYield, TimeToMaturity, Moneyness]
             f_vec = [p['kappa'], p['lambda'], p['sigma'], p['rho'], p['v0'], 
-                     p['r'], p['tau'], p['log_moneyness']] 
+                     p['r'], p['q'], p['tau'], p['log_moneyness']] 
             
             # Construct Label Vector (Outputs)
             # [Option Price, Gradient_1, Gradient_2, ...]

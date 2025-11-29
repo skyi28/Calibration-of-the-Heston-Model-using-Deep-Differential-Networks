@@ -84,84 +84,148 @@ def load_model_assets() -> Tuple[DeepDifferentialNetwork, MinMaxScaler, MinMaxSc
         model = DeepDifferentialNetwork(num_hidden=6, neurons=150, dropout=0.0, activation='softplus')
 
     # Run a dummy forward pass to initialize the graph before loading weights
-    model(tf.zeros((1, 8))) 
+    model(tf.zeros((1, 9))) 
     model.load_weights(config.WEIGHTS_PATH)
     print("Model weights loaded successfully.")
     return model, sx, sy
 
-def get_implied_rate_and_data(daily_df: pd.DataFrame) -> Tuple[pd.DataFrame, float]:
+def load_and_prepare_rates_data() -> pd.DataFrame:
     """
-    This function takes a daily DataFrame of option prices and transforms it into a DataFrame
-    that can be used for calibrating a Deep Differential Network model.
+    Loads, cleans, and combines historical Treasury yield curve data from multiple CSV files.
 
-    The function performs the following operations:
-    1. Coerces option prices from strings to numeric values.
-    2. Calculates the underlying price, strike, and time to maturity from the option prices.
-    3. Calculates the implied rate (r - q) using Put-Call Parity on ATM options.
-    4. Transforms the inputs to log-moneyness to match the training distribution.
-    5. Applies strict filters to ensure high-quality data for calibration.
-
-    Parameters:
-        daily_df (pd.DataFrame): A DataFrame of daily option prices.
+    This function performs the following steps:
+    1.  Defines the paths to the rate files.
+    2.  Reads each CSV, handling different header formats (with/without quotes).
+    3.  Defines a mapping from tenor strings (e.g., '1 Mo', '2 Yr') to years.
+    4.  Renames columns to a consistent numerical format (years).
+    5.  Converts rate percentages to decimal format.
+    6.  Concatenates data from all files into a single DataFrame.
+    7.  Sets a proper DatetimeIndex for efficient lookups.
 
     Returns:
-        df_calib (pd.DataFrame): A DataFrame of option prices suitable for calibrating a Deep Differential Network model.
-        daily_rate (float): The implied rate (r - q) calculated from ATM options.
+        pd.DataFrame: A sorted DataFrame with a DatetimeIndex and columns representing
+                      tenors in years, with rates as decimal values.
     """
-    # Convert columns to numeric
+    print("Loading and preparing historical risk-free rate data...")
+    # Define file paths
+    rate_files = [
+        config.DATA_DIR / "par-yield-curve-rates-2010-2019.csv",
+        config.DATA_DIR / "par-yield-curve-rates-2020-2022.csv",
+        config.DATA_DIR / "daily-treasury-rates-2023.csv"
+    ]
+
+    # Mapping from tenor string to years
+    tenor_map = {
+        '1 Mo': 1/12, '2 Mo': 2/12, '3 Mo': 3/12, '4 Mo': 4/12, '6 Mo': 6/12,
+        '1 Yr': 1.0, '2 Yr': 2.0, '3 Yr': 3.0, '5 Yr': 5.0, '7 Yr': 7.0,
+        '10 Yr': 10.0, '20 Yr': 20.0, '30 Yr': 30.0
+    }
+
+    all_rates = []
+    for file in rate_files:
+        df = pd.read_csv(file)
+        # Clean headers (removes quotes from the 2023 file)
+        df.columns = df.columns.str.strip().str.replace('"', '')
+        df.rename(columns={'Date': 'date'}, inplace=True)
+        df['date'] = pd.to_datetime(df['date'])
+        
+        # Keep only columns that are in our tenor map
+        valid_tenors = [t for t in df.columns if t in tenor_map]
+        df = df[['date'] + valid_tenors]
+        
+        # Convert tenors to numeric and rates to decimals
+        for tenor_str in valid_tenors:
+            df[tenor_str] = pd.to_numeric(df[tenor_str], errors='coerce') / 100.0
+        
+        # Rename columns to years for easy interpolation
+        df.rename(columns=tenor_map, inplace=True)
+        all_rates.append(df)
+
+    # Combine all data, set index, and sort
+    rates_df = pd.concat(all_rates).set_index('date').sort_index()
+    rates_df.dropna(axis=1, how='all', inplace=True) # Drop columns if they are all NaN
+    print("Risk-free rate data prepared successfully.")
+    return rates_df
+
+def get_implied_rate_and_data(daily_df: pd.DataFrame, rates_df: pd.DataFrame) -> Tuple[pd.DataFrame, float]:
+    """
+    This function processes a daily option chain to prepare it for calibration.
+
+    The function performs the following operations:
+    1.  Looks up the Treasury yield curve for the given day.
+    2.  For each option, linearly interpolates the risk-free rate 'r' based on its
+        specific time to maturity ('tau').
+    3.  Calculates a single, robust implied dividend yield 'q' for the day using
+        Put-Call Parity on liquid, near-the-money options.
+    4.  Applies filters to ensure high-quality data for calibration.
+
+    Parameters:
+        daily_df (pd.DataFrame): DataFrame of a single day's option prices.
+        rates_df (pd.DataFrame): The prepared historical DataFrame of Treasury rates.
+
+    Returns:
+        df_calib (pd.DataFrame): A filtered DataFrame ready for calibration, now including
+                                 maturity-matched 'r' and a daily implied 'q'.
+        daily_q (float): The implied dividend yield calculated for the day.
+    """
+    # --- Step 1: Basic data prep (mostly the same) ---
     cols = ['C_BID', 'C_ASK', 'P_BID', 'P_ASK', 'UNDERLYING_LAST', 'STRIKE', 'DTE']
-    for c in cols: 
-        if c in daily_df.columns:
-            daily_df[c] = pd.to_numeric(daily_df[c], errors='coerce')
+    for c in cols:
+        daily_df[c] = pd.to_numeric(daily_df[c], errors='coerce')
     
-    # Translate to the model inputs
     daily_df['S0'] = daily_df['UNDERLYING_LAST']
     daily_df['K'] = daily_df['STRIKE']
     daily_df['tau'] = daily_df['DTE'] / 365.0
     daily_df['Call_Price'] = (daily_df['C_BID'] + daily_df['C_ASK']) / 2.0
-    
-    # We calculate the implied rate (r - q) using Put-Call Parity on ATM options.
-    # This is critical because using a fixed rate ignores dividend yields and regime shifts.
-    if 'P_BID' in daily_df.columns:
+
+    # --- Step 2: NEW LOGIC - Interpolate 'r' and solve for 'q' ---
+    trade_date = daily_df['QUOTE_DATE'].iloc[0].normalize()
+    daily_q = 0.0  # Default dividend yield
+
+    try:
+        # Get the yield curve for the specific trading day
+        day_yield_curve = rates_df.loc[trade_date].dropna()
+        tenors_in_years = day_yield_curve.index.to_numpy(dtype=float)
+        rates_at_tenors = day_yield_curve.values
+        
+        # Interpolate 'r' for EACH option based on its unique 'tau'
+        daily_df['r'] = np.interp(daily_df['tau'], tenors_in_years, rates_at_tenors)
+    except KeyError:
+        # If the date is not in our rate data (e.g., holiday), use the fallback
+        print(f"Warning: No risk-free rate data for {trade_date}. Using fallback rate.")
+        daily_df['r'] = config.FALLBACK_RISK_FREE_RATE
+
+    # Calculate implied 'q' using the new interpolated 'r'
+    if 'P_BID' in daily_df.columns and 'P_ASK' in daily_df.columns:
         daily_df['Put_Price'] = (daily_df['P_BID'] + daily_df['P_ASK']) / 2.0
         daily_df['abs_mny'] = np.abs(daily_df['S0'] - daily_df['K'])
-        # We only use options with a maturity of at least a week (0.02 years)
+        
         atm = daily_df[(daily_df['tau'] >= config.BACKTEST_MIN_TAU) & (daily_df['tau'] <= config.BACKTEST_MAX_TAU)].sort_values('abs_mny')
         
         if len(atm) > 0:
-            # Parity formula solved for r: r = -1/T * ln((S - C + P) / K)
-            atm['implied_r'] = -1 / atm['tau'] * np.log(
-                (atm['S0'] - atm['Call_Price'] + atm['Put_Price']) / atm['K']
-            )
-            # Filter outliers and take median to get a robust daily rate
-            valid = atm[np.abs(atm['implied_r']) <= config.BACKTEST_MAX_IMPLIED_RATE]['implied_r']
-            daily_rate = valid.median() if len(valid) > 0 else 0.0
-        # Use fallback rate if there are no valid options
-        else: 
-            daily_rate = config.FALLBACK_RISK_FREE_RATE
-    else: 
-        daily_rate = config.FALLBACK_RISK_FREE_RATE
+            log_arg = (atm['Call_Price'] - atm['Put_Price'] + atm['K'] * np.exp(-atm['r'] * atm['tau'])) / atm['S0']
+            valid_rows = atm[log_arg > 0].copy()
+            if not valid_rows.empty:
+                valid_rows['implied_q'] = -1 / valid_rows['tau'] * np.log(log_arg[log_arg > 0])
+                valid_q_series = valid_rows[(valid_rows['implied_q'] >= 0) & (valid_rows['implied_q'] <= 0.1)]['implied_q']
+                if not valid_q_series.empty:
+                    daily_q = valid_q_series.median()
 
-    daily_df['r'] = daily_rate
-    
-    # The network was trained on log-moneyness, not linear moneyness.
-    # We must transform the inputs here to match the training distribution.
+    # --- Step 3: Assign final values and apply filters ---
+    daily_df['q'] = daily_q
     daily_df['log_moneyness'] = np.log(daily_df['K'] / daily_df['S0'])
-
     daily_df['marketPrice'] = daily_df['Call_Price']
     daily_df['norm_price'] = daily_df['marketPrice'] / daily_df['S0']
-    
-    # Apply strict filters to ensure we calibrate on high-quality data.
-    # We avoid penny options (< 0.50) and extreme moneyness to ensure stability.
+
     df_calib = daily_df[
-        (daily_df['log_moneyness'] >= config.MIN_LOG_MONEYNESS) &  # translates to ~0.78 linear moneyness
-        (daily_df['log_moneyness'] <= config.MAX_LOG_MONEYNESS) &  # translates to ~1.28 linear moneyness
-        (daily_df['marketPrice'] > config.MIN_OPTION_PRICE) &      # avoid penny options, ensure a market price of at least $0.50
-        (daily_df['tau'] >= config.BACKTEST_MIN_TAU) &             # avoid options with very short maturities
-        (daily_df['tau'] <= config.BACKTEST_MAX_TAU)               # avoid options the neural network has not learned
+        (daily_df['log_moneyness'] >= config.MIN_LOG_MONEYNESS) &
+        (daily_df['log_moneyness'] <= config.MAX_LOG_MONEYNESS) &
+        (daily_df['marketPrice'] > config.MIN_OPTION_PRICE) &
+        (daily_df['tau'] >= config.BACKTEST_MIN_TAU) &
+        (daily_df['tau'] <= config.BACKTEST_MAX_TAU)
     ].copy()
-    
-    return df_calib, daily_rate
+
+    return df_calib, daily_q
 
 # reduce_retracing=True prevents TensorFlow from recompiling the graph for every batch,
 # significantly speeding up the loop.
@@ -252,7 +316,7 @@ def calibrate(train_df: pd.DataFrame, model: DeepDifferentialNetwork, sx: MinMax
         best_params (list): The calibrated Heston model parameters.
     """
     # Convert dataframe columns to TensorFlow tensors
-    inputs = tf.constant(train_df[['r', 'tau', 'log_moneyness']].values, dtype=tf.float32)
+    inputs = tf.constant(train_df[['r', 'q', 'tau', 'log_moneyness']].values, dtype=tf.float32)
     targets = tf.constant(train_df['norm_price'].values, dtype=tf.float32)
     
     # Pre-cast scaler values to tensors to avoid overhead in the loop
@@ -297,6 +361,9 @@ def calibrate(train_df: pd.DataFrame, model: DeepDifferentialNetwork, sx: MinMax
                 best_params = res.x
         except:
             # In case of failure, skip to the next iteration
+            import traceback
+            traceback.print_exc()
+            sys.exit()
             continue
             
     return best_params
@@ -316,7 +383,7 @@ def calculate_mre(params: Tuple[float, float, float, float, float], df: pd.DataF
     Returns:
         float: The Mean Relative Error (MRE) metric for the model on the dataset.
     """
-    inputs = tf.constant(df[['r', 'tau', 'log_moneyness']].values, dtype=tf.float32)
+    inputs = tf.constant(df[['r', 'q', 'tau', 'log_moneyness']].values, dtype=tf.float32)
     
     sx_s = tf.constant(sx.scale_, dtype=tf.float32)
     sx_m = tf.constant(sx.min_, dtype=tf.float32)
@@ -358,9 +425,13 @@ def main() -> None:
     print("Setting seed")
     config.set_reproducibility() 
     
+    print('Loading model assets...')
     model, sx, sy = load_model_assets()
     
-    print("Loading and concatenating CSV data files...")
+    print('Loading historical risk-free rate data...')
+    rates_df = load_and_prepare_rates_data()
+    
+    print("Loading and concatenating historic option data files...")
     full_df = pd.concat([pd.read_csv(f, on_bad_lines='skip', low_memory=False) for f in config.AAPL_OPTION_FILES])
     full_df.columns = full_df.columns.str.strip().str.replace(r'\[|\]', '', regex=True).str.strip()
     full_df['QUOTE_DATE'] = pd.to_datetime(full_df['QUOTE_DATE'])
@@ -380,7 +451,7 @@ def main() -> None:
         
         try:
             # Pre-processing: Implied Rates and Filtering
-            df_liquid, rate = get_implied_rate_and_data(daily_df)
+            df_liquid, dividend_yield = get_implied_rate_and_data(daily_df, rates_df)
             if len(df_liquid) < config.MIN_LIQUID_OPTION_CONTRACTS:
                 print(f'To less liquid options: {len(df_liquid)} < {config.MIN_LIQUID_OPTION_CONTRACTS}')
                 continue
@@ -397,11 +468,13 @@ def main() -> None:
             train_mre = calculate_mre(params, train_df, model, sx, sy)
             test_mre = calculate_mre(params, test_df, model, sx, sy)
             
+            avg_r_day = df_liquid['r'].mean() # Log the average interpolated rate for the day
             results.append({
                 'date': date,
                 'in_sample_mre': train_mre,
                 'out_sample_mre': test_mre,
-                'implied_rate': rate,
+                'avg_risk_free_rate': avg_r_day,
+                'implied_dividend_yield': dividend_yield,
                 'kappa': params[0], 
                 'lambda': params[1], 
                 'sigma': params[2], 

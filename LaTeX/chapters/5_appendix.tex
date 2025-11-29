@@ -64,19 +64,21 @@ The most financially intuitive behavior is observed in the initial variance para
 
 The long-run variance ($\lambda$) remains remarkably stable for the majority of the period, hovering between 0.05 and 0.10. This indicates that despite short-term fluctuations in spot variance, the model's view of the long-term equilibrium volatility remained anchored. A notable exception is the singular, extreme spike in early 2018, likely associated with the "Volmageddon" event, where the sudden collapse of short-volatility strategies momentarily disjointed the long-term expectation.
 
-The correlation parameter ($\rho$) generally adheres to the empirical leverage effect, staying in negative territory between -0.4 and -0.8. However, a regime shift is observable during the 2020-2021 recovery period. During this phase, $\rho$ frequently hits the upper boundary of 0.0, and the volatility of volatility ($\sigma$) simultaneously hits its upper boundary of 1.0. This boundary-hitting behavior suggests that the standard Heston model struggled to accommodate the specific smile dynamics of that period---likely characterized by steep skews and high prices for far-out-of-the-money calls---without pushing its parameters to the limits of the constrained search space.
+The correlation parameter ($\rho$) generally adheres to the empirical leverage effect, staying in negative territory between -0.4 and -0.8. However, a regime shift is observable during the 2020-2021 recovery period. During this phase, $\rho$ frequently hits the upper boundary of 0.0, and the volatility of volatility ($\sigma$) simultaneously hits its upper boundary of 1.0. This indicates that during high-stress regimes, the market-implied volatility dynamics exceeded the range covered by the surrogate model, suggesting that a wider sampling domain is necessary for future studies covering extreme market crashes.
 
 Finally, the mean reversion speed ($\kappa$) exhibits high variance and noise throughout the entire sample, oscillating rapidly between 1.0 and 4.0. This is a well-documented phenomenon in Heston calibration, where $\kappa$ often acts as a slack parameter, absorbing residual fitting errors that the other parameters cannot capture.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1.0\textwidth]{../plots/plot_6_parameters.png}
-    \caption{Daily calibrated Heston parameters over the backtesting period (2016-2023). The plots reveal both intuitive market responses (e.g., spikes in $v_0$ during crises) and challenges in model fitting (e.g., boundary-hitting behavior of $\rho$ and $\sigma$ during 2020-2021).}
+    \caption{Daily calibrated Heston parameters over the backtesting period (2016-2023).}
     \label{fig:parameters}
 \end{figure}
 
-\subsection{Data Source Files for Historical AAPL Options}
-The historical \ac{aapl} options data utilized in this study is sourced from two comprehensive CSV files obtained from Kaggle. These files encompass daily option quotes spanning from January 2016 to December 2023. The files can be downloaded from the following link: \url{https://www.kaggle.com/datasets/kylegraupe/aapl-options-data-2016-2020}
+\subsection{Data Source Files for Historical AAPL Options \& Yield Curves}
+The historical \ac{aapl} options data utilized in this study is sourced from two comprehensive CSV files obtained from Kaggle. These files encompass daily option quotes spanning from January 2016 to December 2023. The files can be downloaded from the following link: \newline\url{https://www.kaggle.com/datasets/kylegraupe/aapl-options-data-2016-2020}.
+
+The risk-free yield curve data, essential for accurate option pricing, is sourced from the U.S. Department of the Treasury's official website. The daily yield curve rates can be accessed at: \newline\url{https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rate-archives}.
 
 \subsection{Code Availability}
-The code for this study is available on GitHub at \url{https://github.com/skyi28/Calibration-of-the-Heston-Model-using-Deep-Differential-Networks}
+The code for this study is available on GitHub at \newline\url{https://github.com/skyi28/Calibration-of-the-Heston-Model-using-Deep-Differential-Networks}.

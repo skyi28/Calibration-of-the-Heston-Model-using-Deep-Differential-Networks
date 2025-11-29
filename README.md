@@ -60,7 +60,9 @@ Calibrating the Heston model requires finding five parameters ($\kappa, \lambda,
 ├── data/                       # Stores datasets and results
 │   ├── heston_dataset.npz      # Synthetic training data
 │   ├── AAPL_stock_history.csv  # AAPL historic stock data (yfinance)
+│   ├── backtest_results.csv    # Output results from historical calibration
 │   ├── descriptive_analysis/   # Output tables and plots from data analysis
+|   ├── yield curve data        # CSV files for historical risk-free rates
 │   └── kaggle                  # Subfolder for option data
 │       └── aapl_year_year.csv  # Historical option data
 ├── model/
@@ -157,6 +159,6 @@ For every trading day:
 ## 6. Performance
 
 The resulting model demonstrates exceptional accuracy and robustness:
-*   **In-Sample MRE:** ~3.7% (Beating the paper's reported ~6.0%).
-*   **Out-of-Sample MRE:** ~4.1% (Demonstrating strong generalization).
+*   **In-Sample MRE:** 4.29% (matching the paper's reported 4.64%).
+*   **Out-of-Sample MRE:** ~4.45% (Demonstrating strong generalization).
 *   **Stability:** Successfully handles the 2020 COVID volatility spike and the 2022 interest rate regime shift without requiring retraining.

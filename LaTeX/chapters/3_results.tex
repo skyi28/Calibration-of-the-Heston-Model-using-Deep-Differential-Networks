@@ -1,7 +1,7 @@
 \subsection{Hyperparameter Optimization Results}
 To identify the optimal configuration for the \ac{ddn}, a hyperparameter search was conducted using the Hyperband algorithm as described in the methodology. The search aimed to minimize the validation loss on a held-out portion of the synthetic dataset. The resulting optimal set of hyperparameters, which was subsequently used for the final model training and backtesting, is summarized in Table \ref{tab:optimal_hyperparameters}.
 
-This configuration achieved a final validation loss ($L_{\text{total}}$) of approximately $2.09 \times 10^{-5}$ during the tuning process which is comparable to the validation loss found by \textcite{zhang2025calibratinghestonmodeldeep} who reported $3.26 \times 10^{-5}$. A notable outcome of the optimization is the selection of a zero dropout rate, indicating that for this specific architecture and dataset, the combination of the AdamW optimizer's weight decay and the complexity of the differential learning task provided sufficient regularization against overfitting.
+This configuration achieved a final validation loss ($L_{\text{total}}$) of approximately $4.81 \times 10^{-6}$ during the tuning process (validation loss pricing: $3.65 \times 10^{-7}$, validation loss gradients: $1.16 \times 10^{-6}$) which is a magnitude lower than the validation loss found by \textcite{zhang2025calibratinghestonmodeldeep} who reported $3.26 \times 10^{-5}$. A notable outcome of the optimization is the selection of a zero dropout rate, indicating that for this specific architecture and dataset, the combination of the AdamW optimizer's weight decay and the complexity of the differential learning task provided sufficient regularization against overfitting.
 
 \begin{table}[H]
     \centering
@@ -13,11 +13,11 @@ This configuration achieved a final validation loss ($L_{\text{total}}$) of appr
         Hyperparameter & Optimal Value \\
         \midrule
         Number of Hidden Layers & 7 \\
-        Neurons per Hidden Layer & 64 \\
+        Neurons per Hidden Layer & 224 \\
         Dropout Rate & 0.0 \\
         Activation Function & swish \\
         Initial Learning Rate & 0.0005 \\
-        First Decay Epochs & 50 \\
+        First Decay Epochs & 150 \\
         \bottomrule
     \end{tabular}
     \end{threeparttable}
@@ -35,9 +35,9 @@ The time-series evolution of the daily calibration error is presented in Figure 
     \label{fig:robustness_analysis}
 \end{figure}
 
-Several key observations can be drawn from this analysis. First, the out-of-sample \ac{mre} consistently tracks the in-sample \ac{mre} very closely throughout the entire seven-year period. This indicates a very small generalization gap, suggesting that the model is not overfitting to the specific subset of options used for calibration each day and successfully captures the underlying volatility surface. Second, the calibration error is strongly positively correlated with the realized market volatility. During periods of low, stable volatility, the \ac{mre} consistently remains below 5\%. Conversely, spikes in calibration error coincide directly with spikes in realized volatility. This is particularly evident during the annotated stress periods, such as the "Volmageddon" event in early 2018 and the "COVID Crash" in March 2020. During the peak of the COVID-19 crisis, the out-of-sample \ac{mre} reached its maximum observed level of approximately 16\%. However, it is critical to note that the error remained bounded and reverted to its baseline level as market volatility subsided, demonstrating the robustness of the calibration procedure.
+Several key observations can be drawn from this analysis. First, the out-of-sample \ac{mre} consistently tracks the in-sample \ac{mre} very closely throughout the entire seven-year period. This indicates a very small generalization gap, suggesting that the model is not overfitting to the specific subset of options used for calibration each day and successfully captures the underlying volatility surface. Second, the calibration error is strongly positively correlated with the realized market volatility. During periods of low, stable volatility, the \ac{mre} consistently remains below 5\%. Conversely, spikes in calibration error coincide directly with spikes in realized volatility. This is particularly evident during the annotated stress periods, such as the "Volmageddon" event in early 2018 and the "COVID Crash" in March 2020. During the peak of the COVID-19 crisis, the out-of-sample \ac{mre} reached its maximum observed level of approximately 15\%. However, it is critical to note that the error remained bounded and reverted to its baseline level as market volatility subsided, demonstrating the robustness of the calibration procedure.
 
-To quantify these observations, the backtest period was segmented into five distinct macroeconomic and market regimes. The aggregated performance metrics for each regime are presented in Table \ref{tab:regime_performance}. The analysis confirms that the highest average out-of-sample \ac{mre} occurred during the "COVID Crash" regime, at 6.76\%. This period also exhibited the highest standard deviation of error (2.46\%), indicating more erratic day-to-day calibration performance, which is consistent with the extreme market turbulence at the time. In contrast, the model achieved its highest accuracy during the "Inflation" regime of 2022-2023, with an average out-of-sample \ac{mre} of just 4.09\%.
+To quantify these observations, the backtest period was segmented into five distinct macroeconomic and market regimes. The aggregated performance metrics for each regime are presented in Table \ref{tab:regime_performance}. The analysis confirms that the highest average out-of-sample \ac{mre} occurred during the "COVID Crash" regime, at 5.60\%. This period also exhibited a high standard deviation of error (1.82\%), indicating erratic day-to-day calibration performance, which is consistent with the extreme market turbulence at the time. In contrast, the model achieved its highest accuracy during the "Inflation" regime of 2022-2023, with an average out-of-sample \ac{mre} of just 3.79\%.
 
 \begin{table}[H]
     \centering
@@ -48,11 +48,11 @@ To quantify these observations, the backtest period was segmented into five dist
         \toprule
         Regime & Avg \ac{mre} & Std \ac{mre} & Std $\kappa$ & Std $\lambda$ & Std $\sigma$ & Std $\rho$ & Std $v_0$ \\
         \midrule
-        \makecell[l]{Pre-Volmageddon \\ \textit{\footnotesize (Jan 2015 - Jan 2018)}} & 0.058 & 0.021 & 0.942 & 0.016 & 0.172 & 0.171 & 0.030 \\
-        \makecell[l]{Trade War \\ \textit{\footnotesize (Feb 2018 - Jan 2020)}} & 0.059 & 0.022 & 0.889 & 0.028 & 0.182 & 0.174 & 0.038 \\
-        \makecell[l]{COVID Crash \\ \textit{\footnotesize (Feb 2020 - May 2020)}} & 0.068 & 0.025 & 0.851 & 0.031 & 0.217 & 0.247 & 0.160 \\
-        \makecell[l]{Recovery \\ \textit{\footnotesize (Jun 2020 - Dec 2021)}} & 0.056 & 0.021 & 0.792 & 0.028 & 0.328 & 0.182 & 0.073 \\
-        \makecell[l]{Inflation \\ \textit{\footnotesize (Jan 2022 - Dec 2023)}} & 0.041 & 0.014 & 0.698 & 0.020 & 0.156 & 0.146 & 0.039 \\
+        \makecell[l]{Pre-Volmageddon \\ \textit{\footnotesize (Jan 2015 - Jan 2018)}} & 0.045 & 0.018 & 0.937 & 0.026 & 0.278 & 0.158 & 0.027 \\
+        \makecell[l]{Trade War \\ \textit{\footnotesize (Feb 2018 - Jan 2020)}} & 0.046 & 0.020 & 0.866 & 0.021 & 0.254 & 0.151 & 0.033 \\
+        \makecell[l]{COVID Crash \\ \textit{\footnotesize (Feb 2020 - May 2020)}} & 0.056 & 0.018 & 0.922 & 0.028 & 0.261 & 0.256 & 0.161 \\
+        \makecell[l]{Recovery \\ \textit{\footnotesize (Jun 2020 - Dec 2021)}} & 0.047 & 0.020 & 1.007 & 0.023 & 0.353 & 0.212 & 0.082 \\
+        \makecell[l]{Inflation \\ \textit{\footnotesize (Jan 2022 - Dec 2023)}} & 0.038 & 0.010 & 0.817 & 0.030 & 0.201 & 0.137 & 0.037 \\
         \bottomrule
     \end{tabular}
     \begin{tablenotes}
@@ -61,9 +61,9 @@ To quantify these observations, the backtest period was segmented into five dist
     \end{threeparttable}
 \end{table}
 
-Furthermore, Table \ref{tab:regime_performance} provides insight into the stability of the calibrated Heston parameters. The standard deviation of the initial variance, $v_0$, was an order of magnitude higher during the "COVID Crash" (0.160) than in calmer periods like "Pre-Volmageddon" (0.030). This is a financially intuitive result, as $v_0$ represents the current level of market variance, which was exceptionally volatile during the crash. Similarly, the volatility of volatility, $\sigma$, shows the highest instability during the "Recovery" period, possibly reflecting market uncertainty about the path of the economic recovery. The fact that the calibrated parameters adapt in a theoretically consistent manner provides further validation for the calibration methodology.
+Furthermore, Table \ref{tab:regime_performance} provides insight into the stability of the calibrated Heston parameters. The standard deviation of the initial variance, $v_0$, was an order of magnitude higher during the "COVID Crash" (0.161) than in calmer periods like "Pre-Volmageddon" (0.027). This is a financially intuitive result, as $v_0$ represents the current level of market variance, which was exceptionally volatile during the crash. Similarly, the volatility of volatility, $\sigma$, shows the highest instability during the "Recovery" period, possibly reflecting market uncertainty about the path of the economic recovery. The fact that the calibrated parameters adapt in a theoretically consistent manner provides further validation for the calibration methodology.
 
-A direct comparison of the overall backtesting performance with the results reported in the reference study by \textcite{zhang2025calibratinghestonmodeldeep} provides further context for the model's accuracy. Across the entire seven-year backtest period, the calibration methodology achieved an average in-sample \ac{mre} of 5.33\% and an average out-of-sample \ac{mre} of 5.55\%. The reference paper evaluates its \ac{ddn} method on datasets of 10, 50, and 100 Microsoft call options, reporting \ac{mre}s of 0.67\%, 1.86\%, and 4.64\%, respectively, demonstrating a clear degradation in performance as the complexity of the calibration surface increases with the number of contracts. A crucial factor in interpreting these results is the size and diversity of the option set used for daily calibration. In this study, the daily calibration was performed on a significantly larger set of contracts, with an average of 261 options in the in-sample set and 65 options in the out-of-sample set.
+A direct comparison of the overall backtesting performance with the results reported in the reference study by \textcite{zhang2025calibratinghestonmodeldeep} provides further context for the model's accuracy. Across the entire seven-year backtest period, the calibration methodology achieved an average in-sample \ac{mre} of 4.29\% and an average out-of-sample \ac{mre} of 4.49\%. The reference paper evaluates its \ac{ddn} method on datasets of 10, 50, and 100 Microsoft call options, reporting \ac{mre}s of 0.67\%, 1.86\%, and 4.64\%, respectively, demonstrating a clear degradation in performance as the complexity of the calibration surface increases with the number of contracts. A crucial factor in interpreting these results is the size and diversity of the option set used for daily calibration. In this study, the daily calibration was performed on a significantly larger set of contracts, with an average of 261 options in the in-sample set and 65 options in the out-of-sample set.
 
 To further diagnose the performance characteristics of the daily calibration, Figure \ref{fig:diagnostic_plots} provides a more granular analysis of the model's generalization capability and its pricing accuracy at the individual option level.
 
@@ -99,20 +99,39 @@ To disaggregate the overall performance and identify specific areas of strength 
     \label{fig:mre_heatmaps}
 \end{figure}
 
-The analysis of the call option performance reveals a distinct and theoretically consistent pattern. The model achieves its highest accuracy, with \ac{mre}s as low as 1.4\%, for \ac{itm} (moneyness < 0.95) and \ac{atm} (moneyness 0.95-1.05) contracts, particularly those with longer maturities. This region represents the most liquid and highest-priced segment of the call option market. Conversely, the calibration error is highest for \ac{otm} (moneyness > 1.05) calls, reaching a peak of 15.2\% for contracts with less than three months to expiration. This behavior is a known characteristic of the \ac{mre} metric; \ac{otm} options have very low absolute prices, causing even small absolute pricing errors to translate into large relative errors.
+The analysis of the call option performance reveals a distinct and theoretically consistent pattern. The model achieves its highest accuracy, with \ac{mre}s as low as 2.3\%, for \ac{itm} (moneyness < 0.95) and \ac{atm} (moneyness 0.95-1.05) contracts, particularly those with longer maturities. This region represents the most liquid and highest-priced segment of the call option market. Conversely, the calibration error is highest for \ac{otm} (moneyness > 1.05) calls, reaching a peak of 12.7\% for contracts with less than three months to expiration. This behavior is a known characteristic of the \ac{mre} metric; \ac{otm} options have very low absolute prices, causing even small absolute pricing errors to translate into large relative errors.
 
-The performance for put options, whose prices are derived via parity, shows a notable asymmetry. The model is accurate for \ac{itm} puts (moneyness > 1.05), where the \ac{mre} is consistently low across all maturities, ranging from 1.2\% to 3.5\%. However, the model exhibits significantly higher errors for \ac{otm} puts (moneyness < 0.95), with the \ac{mre} reaching 26.8\% for short- to medium-dated contracts. This phenomenon is a direct consequence of the error propagation through the put-call parity formula. An \ac{otm} put corresponds to an \ac{itm} call. The model's highly accurate pricing of \ac{itm} calls, when used in the parity equation to price the corresponding (and very cheap) \ac{otm} puts, can result in a large relative error for the put. Conversely, the larger relative errors from cheap \ac{otm} calls do not significantly impact the relative error of the corresponding expensive \ac{itm} puts. Overall, the analysis confirms that the \ac{ddn} calibration is most robust in the \ac{atm} region, which is the most critical for practical risk management and volatility trading applications.
+The performance for put options, whose prices are derived via parity, shows a notable asymmetry. The model is accurate for \ac{itm} puts (moneyness > 1.05), where the \ac{mre} is consistently low across all maturities, ranging from 1.0\% to 3.0\%. However, the model exhibits significantly higher errors for \ac{otm} puts (moneyness < 0.95), with the \ac{mre} reaching 28.1\% for short-dated contracts. This phenomenon is a direct consequence of the error propagation through the put-call parity formula. An \ac{otm} put corresponds to an \ac{itm} call. The model's highly accurate pricing of \ac{itm} calls, when used in the parity equation to price the corresponding (and very cheap) \ac{otm} puts, can result in a large relative error for the put. Conversely, the larger relative errors from cheap \ac{otm} calls do not significantly impact the relative error of the corresponding expensive \ac{itm} puts. Overall, the analysis confirms that the \ac{ddn} calibration is most robust in the \ac{atm} region, which is the most critical for practical risk management and volatility trading applications.
 
-\subsection{Stability Across Interest Rate Regimes}
-To assess the impact of the prevailing interest rate and dividend yield environment on calibration accuracy, the relationship between the daily out-of-sample \ac{mre} and the dynamically calculated implied risk-free rate ($r-q$) was examined. The backtesting period from 2016 to 2023 encompassed a wide range of monetary conditions, including periods of near-zero and negative implied rates, providing a robust test of the model's stability. Figure \ref{fig:rate_stability} presents a scatter plot of this relationship for every day in the backtest.
+\subsection{Validation with an Analytical Pricer}
+To ensure a methodologically pure assessment of the \ac{ddn}'s calibration quality, a final validation was conducted. The primary backtest, as detailed previously, utilized the trained \ac{ddn} as a surrogate model for option pricing. While this approach is computationally efficient, it inherently conflates the network's ability to find correct Heston parameters (calibration) with its ability to accurately approximate the Heston formula (pricing). To de-couple these two factors, we isolate the calibration performance by taking the parameters generated by the \ac{ddn} and pricing the corresponding options using a standard, independent analytical engine.
 
-\begin{figure}[H]
+For this validation, a representative sample of 883 trading days was selected, balanced across the five previously defined market regimes. For each day, the Heston parameters calibrated by the \ac{ddn} were fed into the highly-regarded AnalyticHestonEngine from the QuantLib open-source library. The \ac{mre} was then recalculated by comparing the market prices to the prices generated by this true Heston pricer. The results, presented in Table \ref{tab:validation_results}, compare this "True Heston \ac{mre}" against the \ac{mre} obtained from the \ac{ddn} surrogate model in the original backtest.
+
+The analysis reveals a crucial finding: the overall average \ac{mre} when using the analytical QuantLib pricer is 4.87\%, only marginally higher than the 4.48\% achieved using the \ac{ddn} surrogate. This small difference of 0.39 percentage points provides strong evidence that the \ac{ddn} introduces minimal approximation error. It confirms that the network is not merely fitting to its own internal biases but is genuinely discovering Heston parameters that are robust and accurate when applied in a canonical, model-pure pricing framework. Across all market regimes, the performance remains remarkably consistent, with the \ac{mre} from the true Heston pricer closely tracking that of the surrogate. This result rigorously validates the \ac{ddn}'s primary function as a high-fidelity calibration instrument, demonstrating its effectiveness in accurately mapping market conditions to the latent parameters of the Heston model.
+
+\begin{table}[H]
     \centering
-    \includegraphics[width=1\textwidth]{../plots/plot_2_rate_sensitivity.png}
-    \caption{Out-of-sample \ac{mre} as a function of the daily implied risk-free rate ($r-q$). Each point represents a single trading day's calibration result. A linear regression line is overlaid to indicate the general trend.}
-    \label{fig:rate_stability}
-\end{figure}
-
-The analysis reveals a weak, negative linear relationship between the implied risk-free rate and the calibration error. As the implied rate increases, the out-of-sample \ac{mre} exhibits a modest tendency to decrease. Importantly, there is no evidence of performance degradation or instability in the low or negative implied rate regimes. The calibration errors remain well-distributed and bounded across the entire observed spectrum of rates, from approximately -3\% to +4\%.
-
-A plausible interpretation of this negative trend is that periods of very low or negative implied rates often coincide with periods of market stress, where high dividend yields relative to risk-free rates are more common. As established in the time-series analysis, such periods of market stress are typically associated with higher realized volatility, which is the primary driver of increased calibration error. Therefore, the slightly higher \ac{mre} observed at the lower end of the rate spectrum is likely attributable to the confounding effect of volatility rather than the interest rate level itself. The key finding from this analysis is that the \ac{ddn}-based calibration methodology demonstrates considerable robustness and does not exhibit any systematic failure or bias across the diverse interest rate and dividend yield environments encountered during the seven-year backtest. This validates the effectiveness of the dynamic, parity-based rate estimation procedure.
+    \caption{Validation of \ac{ddn} Calibration Quality Using an Analytical Pricer.}
+    \label{tab:validation_results}
+    \begin{threeparttable}
+    \begin{tabular}{lrrr}
+        \toprule
+        Market Regime & \ac{ddn} \ac{mre} (\%) & True Heston \ac{mre} (\%) & Difference (p.p.) \\
+        \midrule
+        Pre-Volmageddon & 4.59 & 5.04 & 0.45 \\
+        Trade War & 4.47 & 5.06 & 0.59 \\
+        COVID Crash & 5.60 & 5.59 & -0.01 \\
+        Recovery & 4.63 & 5.01 & 0.38 \\
+        Inflation & 3.75 & 4.05 & 0.30 \\
+        \midrule
+        \textbf{Overall Average} & \textbf{4.48} & \textbf{4.87} & \textbf{0.39} \\
+        \bottomrule
+    \end{tabular}
+    \begin{tablenotes}
+        \item[a] \ac{mre} calculated using the trained \ac{ddn} as a surrogate pricer.
+        \item[b] \ac{mre} calculated using the \ac{ddn}'s calibrated parameters in QuantLib's \texttt{AnalyticHestonEngine}.
+        \item[c] The increase in \ac{mre} attributable to removing the \ac{ddn}'s surrogate pricing function.
+    \end{tablenotes}
+    \end{threeparttable}
+\end{table}

@@ -47,6 +47,7 @@ PARAM_RANGES = {
     'rho': [-0.99, 0.0],                                    # Correlation between asset price and variance
     'v0': [0.01, 1.0],                                      # Initial variance at time t=0
     'r': [-0.03, MAX_RISK_FREE_RATE],                       # Risk-free interest rate, allow negative implied interest rates since they appear in the dataset
+    'q': [0.0, 0.05],                                       # Dividend yield
     'tau': [MIN_TAU, MAX_TAU],                              # Time to maturity (in years)
     'log_moneyness': [-1.0, 1.0]                            # Log-moneyness range (ln(K/S0))
 }
@@ -82,6 +83,7 @@ BACKTEST_PARAMETER_BOUNDS = [                               # Constraints for He
     (-0.99, 0.0),
     (0.01, 1.0)
 ]
+TOTAL_SAMPLES = 1000                                        # Number of samples used to validate the results using the analytical formula of the Heston Model with the determined parameters 
 
 # --- Hyperparameter Tuning Configuration ---
 TUNING_VALIDATION_SIZE = 0.2                                # Size of the validation set (fraction of total data)

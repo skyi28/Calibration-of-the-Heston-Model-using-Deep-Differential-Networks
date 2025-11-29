@@ -188,303 +188,342 @@ def predict_real_prices(model, df, params, sx, sy):
 
 df_ts = load_presentation_data()
 
-# --- SIDEBAR ---
-st.sidebar.markdown("## Navigation")
-st.sidebar.info("Use the tabs above to navigate the presentation.")
-
 # --- HEADER ---
 st.markdown("<h1 style='text-align: center; color: white;'>Calibration of the <span class='highlight'>Heston Model</span><br>using Neural Networks</h1>", unsafe_allow_html=True)
 
 # --- TABS ---
 tab1, tab2, tab3 = st.tabs(["1️⃣ The Methodology", "2️⃣ Results & Analysis", "3️⃣ Implications"])
 
-st.markdown("ARIAN IST TOLL!")
 
 # ==============================================================================
 # TAB 1: METHODOLOGY
 # ==============================================================================
 with tab1:
     # --- PART 1: THE FOUNDATION ---
-    st.markdown("### 1. The Foundation: Heston Stochastic Volatility")
-    
-    col1, col2 = st.columns([3, 2], gap="large")
-    with col1:
-        st.markdown("""
-        <div class="red-box">
-            <h4>Concept</h4>
-            <p>The Black-Scholes model assumes volatility is constant. This fails to explain the <b>Volatility Smile</b> observed in real markets.</p>
-            <p>The <span class="highlight">Heston Model (1993)</span> solves this by treating Volatility (<span class="highlight">v<sub>t</sub></span>) as a random process that correlates with the Asset Price.</p>
-        </div>
-        """, unsafe_allow_html=True)
+    with st.expander("🔍 The Foundation: Heston Stochastic Volatility", expanded=False):
+        st.markdown("### 1. The Foundation: Heston Stochastic Volatility")
         
-    with col2:
-        st.markdown("**Heston Dynamics:**")
-        st.latex(r'''
-        \begin{aligned}
-        dS_t &= r S_t dt + \sqrt{v_t} S_t dW_t^S \\
-        dv_t &= \kappa(\lambda - v_t) dt + \sigma \sqrt{v_t} dW_t^v
-        \end{aligned}
-        ''')
-
-    st.markdown("---")
+        col1, col2 = st.columns([3, 2], gap="large")
+        with col1:
+            st.markdown("""
+            <div class="red-box">
+                <h4>Concept</h4>
+                <p>The Black-Scholes model assumes volatility is constant. This fails to explain the <b>Volatility Smile</b> observed in real markets.</p>
+                <p>The <span class="highlight">Heston Model (1993)</span> solves this by treating Volatility (<span class="highlight">v<sub>t</sub></span>) as a random process that correlates with the Asset Price.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with col2:
+            st.markdown("**Heston Dynamics:**")
+            st.latex(r'''
+            \begin{aligned}
+            dS_t &= r S_t dt + \sqrt{v_t} S_t dW_t^S \\
+            dv_t &= \kappa(\lambda - v_t) dt + \sigma \sqrt{v_t} dW_t^v
+            \end{aligned}
+            ''')
 
     # --- PART 2: THE CHALLENGE ---
-    st.markdown("### 2. The Bottleneck: Traditional Calibration")
-    
-    st.markdown("""
-    <p>To use the model, we must find the parameters <span class="highlight">Θ = {κ, λ, σ, ρ, v₀}</span> that minimize the error between Market Prices and Model Prices:</p>
-    """, unsafe_allow_html=True)
-    
-    st.latex(r'''
-    \Theta^* = \arg\min_{\Theta} \sum_{i=1}^{N} \left( C_{mkt}^i - C_{mod}^i(\Theta) \right)^2
-    ''')
-    
-    col_prob, col_why = st.columns([1, 1], gap="medium")
-    
-    with col_prob:
+    with st.expander("⚠️ The Challenge: Traditional Calibration", expanded=False):
+        st.markdown("### 2. The Challenge: Traditional Calibration")
+        
         st.markdown("""
-        <div class="red-box">
-            <h4>Traditional Methods</h4>
-            <p><b>1. Local Optimizers</b> (e.g., Levenberg-Marquardt)</p>
-            <p><b>2. Global Optimizers</b> (e.g., Genetic Algorithms)</p>
-        </div>
+        <p>To use the model, we must find the parameters <span class="highlight">Θ = {κ, λ, σ, ρ, v₀}</span> that minimize the error between Market Prices and Model Prices:</p>
         """, unsafe_allow_html=True)
         
-    with col_why:
-        st.markdown("""
-        <div class="red-box">
-            <h4>Why it is Slow <span style='font-size:20px'>🐢</span></h4>
-            <p>1. <b>Gradient Calculation:</b> Calculating derivatives (∇Θ) requires solving the pricing engine 10x per step (Finite Differences).</p>
-            <p>2. <b>Integration Cost:</b> Every pricing call requires solving a complex integral.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("---")
+        st.latex(r'''
+        \Theta^* = \arg\min_{\Theta} \sum_{i=1}^{N} \left( C_{mkt}^i - C_{mod}^i(\Theta) \right)^2
+        ''')
+        
+        col_prob, col_why = st.columns([1, 1], gap="medium")
+        
+        with col_prob:
+            st.markdown("""
+            <div class="red-box">
+                <h4>Traditional Methods</h4>
+                <p><b>1. Local Optimizers</b> (e.g., Levenberg-Marquardt)</p>
+                <p><b>2. Global Optimizers</b> (e.g., Genetic Algorithms)</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with col_why:
+            st.markdown("""
+            <div class="red-box">
+                <h4>Why it is Slow <span style='font-size:20px'>🐢</span></h4>
+                <p>1. <b>Gradient Calculation:</b> Calculating derivatives (∇Θ) requires solving the pricing engine 10x per step (Finite Differences).</p>
+                <p>2. <b>Integration Cost:</b> Every pricing call requires solving a complex integral.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
     # --- PART 3: THE SOLUTION ---
-    st.markdown("### 3. The Solution: Deep Differential Networks (DDN)")
-    
-    col_sol_text, col_sol_vis = st.columns([2, 1], gap="large")
-    
-    with col_sol_text:
-        st.markdown("""
-        <div class="red-box">
-            <h4>The DDN Surrogate <span style='font-size:20px'>🚀</span></h4>
-            <p>We replace the slow integral solver with a <b>Neural Network</b> trained using <span class="highlight">Sobolev Training</span>.</p>
-            <ul>
-                <li><b>Instant Pricing:</b> Matrix multiplication replaces integration.</li>
-                <li><b>Instant Gradients:</b> We use Backpropagation to get Exact Gradients (Neural Greeks) instantly.</li>
-                <li><b>Result:</b> The optimizer runs millions of times faster.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+    with st.expander("🚀 The Solution: Deep Differential Networks", expanded=False):
+        st.markdown("### 3. The Solution: Deep Differential Networks (DDN)")
         
-    with col_sol_vis:
-        st.markdown("""
-        <div style="background-color: #111; border: 1px solid #FF4B4B; padding: 15px; border-radius: 10px; text-align: center;">
-            <span style="font-size: 40px;">🧠</span><br>
-            <span class="highlight">DDN Model</span><br>
-            ⬇️<br>
-            Predicted Price<br>
-            <span class="highlight">+</span><br>
-            Predicted Gradients<br>
-            (∇Θ)
-        </div>
-        """, unsafe_allow_html=True)
+        col_sol_text, col_sol_vis = st.columns([2, 1], gap="large")
+        
+        with col_sol_text:
+            st.markdown("""
+            <div class="red-box">
+                <h4>The DDN Surrogate <span style='font-size:20px'>🚀</span></h4>
+                <p>We replace the slow integral solver with a <b>Neural Network</b> trained using <span class="highlight">Sobolev Training</span>.</p>
+                <ul>
+                    <li><b>Instant Pricing:</b> Matrix multiplication replaces integration.</li>
+                    <li><b>Instant Gradients:</b> We use Backpropagation to get Exact Gradients (Neural Greeks) instantly.</li>
+                    <li><b>Result:</b> The optimizer runs millions of times faster.</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with col_sol_vis:
+            st.markdown("""
+            <div style="background-color: #111; border: 1px solid #FF4B4B; padding: 15px; border-radius: 10px; text-align: center;">
+                <span style="font-size: 40px;">🧠</span><br>
+                <span class="highlight">DDN Model</span><br>
+                ⬇️<br>
+                Predicted Price<br>
+                <span class="highlight">+</span><br>
+                Predicted Gradients<br>
+                (∇Θ)
+            </div>
+            """, unsafe_allow_html=True)
 
 # ==============================================================================
 # TAB 2: RESULTS
 # ==============================================================================
 with tab2:
-    st.markdown("### A. Longitudinal Robustness (2016-2023)")
-    
-    # 1. TIME SERIES
-    fig_ts = go.Figure()
-    fig_ts.add_trace(go.Scatter(
-        x=df_ts["Date"], y=df_ts["Realized_Vol"],
-        fill='tozeroy', mode='none', name='Market Volatility',
-        fillcolor='rgba(255, 255, 255, 0.1)'
-    ))
-    fig_ts.add_trace(go.Scatter(
-        x=df_ts["Date"], y=df_ts["MRE_Out_Sample"],
-        mode='lines', name='Calibration Error',
-        line=dict(color='#FF4B4B', width=2)
-    ))
-    fig_ts.update_layout(template="plotly_dark", title="Calibration Error vs. Volatility", height=350, plot_bgcolor="#111111", paper_bgcolor="#111111")
-    st.plotly_chart(fig_ts, use_container_width=True)
-    
-    st.markdown("---")
-    
+    with st.expander("📊 Backtest Results (2016-2023)", expanded=False):
+        st.markdown("### Backtest Results (2016-2023)")
+        
+        # 1. TIME SERIES
+        fig_ts = go.Figure()
+        fig_ts.add_trace(go.Scatter(
+            x=df_ts["Date"], y=df_ts["Realized_Vol"],
+            fill='tozeroy', mode='none', name='Market Volatility',
+            fillcolor='rgba(255, 255, 255, 0.1)'
+        ))
+        fig_ts.add_trace(go.Scatter(
+            x=df_ts["Date"], y=df_ts["MRE_Out_Sample"],
+            mode='lines', name='Calibration Error',
+            line=dict(color='#FF4B4B', width=2)
+        ))
+        fig_ts.update_layout(template="plotly_dark", title="Calibration Error vs. Volatility", height=350, plot_bgcolor="#111111", paper_bgcolor="#111111")
+        st.plotly_chart(fig_ts, use_container_width=True)
+        
     # -------------------------------------------------------------------------
     # SECTION B: HEATMAPS & PARITY ANALYSIS
     # -------------------------------------------------------------------------
-    st.markdown("### B. Error Analysis by Moneyness & Maturity")
-    
-    rows, cols, calls, puts = get_heatmap_data()
-    
-    c1, c2 = st.columns(2)
-    
-    with c1:
-        fig_call = px.imshow(calls, x=cols, y=rows, text_auto=True, color_continuous_scale="Reds", title="Call Option MRE (%)")
-        fig_call.update_layout(template="plotly_dark", plot_bgcolor="#111111", paper_bgcolor="#111111")
-        st.plotly_chart(fig_call, use_container_width=True)
-        st.caption("Call errors are highest for **OTM (>1.05)**. Low absolute prices mean small deviations cause huge % errors.")
+    with st.expander("🗺️ Error Analysis by Moneyness & Maturity", expanded=False):
+        st.markdown("### Error Analysis by Moneyness & Maturity")
+        
+        rows, cols, calls, puts = get_heatmap_data()
+        
+        c1, c2 = st.columns(2)
+        
+        with c1:
+            fig_call = px.imshow(calls, x=cols, y=rows, text_auto=True, color_continuous_scale="Reds", title="Call Option MRE (%)")
+            fig_call.update_layout(template="plotly_dark", plot_bgcolor="#111111", paper_bgcolor="#111111")
+            st.plotly_chart(fig_call, use_container_width=True)
+            st.caption("Call errors are highest for **OTM (>1.05)**. Low absolute prices mean small deviations cause huge % errors.")
 
-    with c2:
-        fig_put = px.imshow(puts, x=cols, y=rows, text_auto=True, color_continuous_scale="Reds", title="Put Option MRE (%)")
-        fig_put.update_layout(template="plotly_dark", plot_bgcolor="#111111", paper_bgcolor="#111111")
-        st.plotly_chart(fig_put, use_container_width=True)
-        st.caption("Put errors are highest for **OTM (<0.95)**. This is an artifact of Put-Call Parity propagation.")
+        with c2:
+            fig_put = px.imshow(puts, x=cols, y=rows, text_auto=True, color_continuous_scale="Reds", title="Put Option MRE (%)")
+            fig_put.update_layout(template="plotly_dark", plot_bgcolor="#111111", paper_bgcolor="#111111")
+            st.plotly_chart(fig_put, use_container_width=True)
+            st.caption("Put errors are highest for **OTM (<0.95)**. This is an artifact of Put-Call Parity propagation.")
 
-    # SVG Image for Formula to bypass Streamlit LaTeX/HTML limitations
-    st.markdown("""
-    <div class="red-box">
-        <h4>Why the asymmetry? (Put-Call Parity)</h4>
-        <p>We price Puts using the calibrated Call surface via the Parity formula:</p>
-        <div style="text-align: center; padding: 15px;">
-            <img src="https://latex.codecogs.com/svg.latex?\color{white}P_{model}=C_{model}^{DDN}-S_0+Ke^{-r\tau}" 
-                 alt="Put-Call Parity Formula" 
-                 style="background-color: transparent; min-width: 250px;" />
+        # SVG Image for Formula to bypass Streamlit LaTeX/HTML limitations
+        st.markdown("""
+        <div class="red-box">
+            <h4>Why the asymmetry? (Put-Call Parity)</h4>
+            <p>We price Puts using the calibrated Call surface via the Parity formula:</p>
+            <div style="text-align: center; padding: 15px;">
+                <img src="https://latex.codecogs.com/svg.latex?\color{white}P_{model}=C_{model}^{DDN}-S_0+Ke^{-r\tau}" 
+                    alt="Put-Call Parity Formula" 
+                    style="background-color: transparent; min-width: 250px;" />
+            </div>
+            <p>An OTM Put corresponds to an <b>ITM Call</b> (which is expensive). A 1% error on an expensive ITM Call represents a dollar amount that might be larger than the entire price of the cheap OTM Put, resulting in massive relative error statistics (e.g., 29%).</p>
         </div>
-        <p>An OTM Put corresponds to an <b>ITM Call</b> (which is expensive). A 1% error on an expensive ITM Call represents a dollar amount that might be larger than the entire price of the cheap OTM Put, resulting in massive relative error statistics (e.g., 29%).</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
+        """, unsafe_allow_html=True)
+        
     # -------------------------------------------------------------------------
     # SECTION C: REAL DATA SURFACE FIT
     # -------------------------------------------------------------------------
-    st.markdown("### C. Volatility Surface Fit (Real Data)")
-    
-    res_df = load_backtest_results()
-    model, sx, sy = load_model_assets()
-    
-    if res_df.empty or model is None:
-        st.warning("⚠️ Real data or Model weights not found. Ensure 'data/backtest_results.csv' and 'models/' exist.")
-    else:
-        col_sel, col_plot = st.columns([1, 3])
+    with st.expander("📈 Pricing Fit (Real Data)", expanded=False):
+        st.markdown("### Pricing Fit (Real Data)")
         
-        with col_sel:
-            st.markdown("#### Configuration")
-            # Date Selection
-            min_date = res_df.index.min().date()
-            max_date = res_df.index.max().date()
-            default_date = pd.to_datetime("2020-06-15").date()
-            if default_date < min_date or default_date > max_date: default_date = min_date
-                
-            selected_date_input = st.date_input("Select Trading Day", value=default_date, min_value=min_date, max_value=max_date)
-            selected_date = pd.to_datetime(selected_date_input)
+        res_df = load_backtest_results()
+        model, sx, sy = load_model_assets()
+        
+        if res_df.empty or model is None:
+            st.warning("⚠️ Real data or Model weights not found. Ensure 'data/backtest_results.csv' and 'models/' exist.")
+        else:
+            col_sel, col_plot = st.columns([1, 3])
             
-            # Snap to closest if missing
-            if selected_date not in res_df.index:
-                idx = res_df.index.get_indexer([selected_date], method='nearest')[0]
-                target_date = res_df.index[idx]
-                st.info(f"Date missing. Snapped to: {target_date.date()}")
-            else:
-                target_date = selected_date
-
-            # Load Raw Data
-            day_df = load_raw_option_data(target_date)
-            
-            if day_df.empty:
-                st.error("No raw CSV data for this date.")
-            else:
-                # Preprocessing
-                row = res_df.loc[target_date]
-                params = [row['kappa'], row['lambda'], row['sigma'], row['rho'], row['v0']]
-                rate = row['implied_rate']
+            with col_sel:
+                st.markdown("#### Configuration")
+                # Date Selection
+                min_date = res_df.index.min().date()
+                max_date = res_df.index.max().date()
+                default_date = pd.to_datetime("2020-06-15").date()
+                if default_date < min_date or default_date > max_date: default_date = min_date
+                    
+                selected_date_input = st.date_input("Select Trading Day", value=default_date, min_value=min_date, max_value=max_date)
+                selected_date = pd.to_datetime(selected_date_input)
                 
-                cols_to_fix = ['C_BID', 'C_ASK', 'UNDERLYING_LAST', 'STRIKE', 'DTE']
-                for c in cols_to_fix: day_df[c] = pd.to_numeric(day_df[c], errors='coerce')
-                
-                day_df['S0'] = day_df['UNDERLYING_LAST']
-                day_df['K'] = day_df['STRIKE']
-                day_df['tau'] = day_df['DTE'] / 365.0
-                day_df['marketPrice'] = (day_df['C_BID'] + day_df['C_ASK']) / 2.0
-                day_df['r'] = rate
-                day_df['log_moneyness'] = np.log(day_df['K'] / day_df['S0'])
-                
-                # Filter (Liquid options only)
-                day_df = day_df[(day_df['marketPrice'] > 0.50) & (day_df['tau'] > 0.02)].copy()
-                
-                # Maturity Selection
-                available_taus = sorted(day_df['tau'].unique())
-                if not available_taus:
-                    st.error("No liquid options found.")
+                # Snap to closest if missing
+                if selected_date not in res_df.index:
+                    idx = res_df.index.get_indexer([selected_date], method='nearest')[0]
+                    target_date = res_df.index[idx]
+                    st.info(f"Date missing. Snapped to: {target_date.date()}")
                 else:
-                    tau_map = {t: f"{int(t*365)} Days (T={t:.2f})" for t in available_taus}
-                    default_idx = len(available_taus)//2
-                    selected_tau_val = st.selectbox("Select Maturity", options=available_taus, format_func=lambda x: tau_map[x], index=default_idx)
+                    target_date = selected_date
+
+                # Load Raw Data
+                day_df = load_raw_option_data(target_date)
+                
+                if day_df.empty:
+                    st.error("No raw CSV data for this date.")
+                else:
+                    # Preprocessing
+                    row = res_df.loc[target_date]
+                    params = [row['kappa'], row['lambda'], row['sigma'], row['rho'], row['v0']]
+                    rate = row['implied_rate']
                     
-                    # Prediction & Plot
-                    subset = day_df[np.isclose(day_df['tau'], selected_tau_val, atol=0.001)].sort_values('K')
+                    cols_to_fix = ['C_BID', 'C_ASK', 'UNDERLYING_LAST', 'STRIKE', 'DTE']
+                    for c in cols_to_fix: day_df[c] = pd.to_numeric(day_df[c], errors='coerce')
                     
-                    if not subset.empty:
-                        with st.spinner("Calculating DDN Prices..."):
-                            model_prices = predict_real_prices(model, subset, params, sx, sy)
+                    day_df['S0'] = day_df['UNDERLYING_LAST']
+                    day_df['K'] = day_df['STRIKE']
+                    day_df['tau'] = day_df['DTE'] / 365.0
+                    day_df['marketPrice'] = (day_df['C_BID'] + day_df['C_ASK']) / 2.0
+                    day_df['r'] = rate
+                    day_df['log_moneyness'] = np.log(day_df['K'] / day_df['S0'])
+                    
+                    # Filter (Liquid options only)
+                    day_df = day_df[(day_df['marketPrice'] > 0.50) & (day_df['tau'] > 0.02)].copy()
+                    
+                    # Maturity Selection
+                    available_taus = sorted(day_df['tau'].unique())
+                    if not available_taus:
+                        st.error("No liquid options found.")
+                    else:
+                        tau_map = {t: f"{int(t*365)} Days (T={t:.2f})" for t in available_taus}
+                        default_idx = len(available_taus)//2
+                        selected_tau_val = st.selectbox("Select Maturity", options=available_taus, format_func=lambda x: tau_map[x], index=default_idx)
                         
-                        with col_plot:
-                            fig_fit = go.Figure()
-                            # Market
-                            fig_fit.add_trace(go.Scatter(
-                                x=subset['K'], y=subset['marketPrice'],
-                                mode='markers', name='Market Price',
-                                marker=dict(color='white', size=8, line=dict(width=1, color='gray'))
-                            ))
-                            # Model
-                            fig_fit.add_trace(go.Scatter(
-                                x=subset['K'], y=model_prices,
-                                mode='lines', name='DDN Model',
-                                line=dict(color='#FF4B4B', width=3)
-                            ))
+                        # Prediction & Plot
+                        subset = day_df[np.isclose(day_df['tau'], selected_tau_val, atol=0.001)].sort_values('K')
+                        
+                        if not subset.empty:
+                            with st.spinner("Calculating DDN Prices..."):
+                                model_prices = predict_real_prices(model, subset, params, sx, sy)
                             
-                            spot_price = subset['S0'].iloc[0]
-                            fig_fit.add_vline(x=spot_price, line_dash="dash", line_color="gray", annotation_text="Spot")
-                            
-                            fig_fit.update_layout(
-                                template="plotly_dark",
-                                title=f"<b>Calibration Fit</b> | {target_date.date()} | Spot: ${spot_price:.2f}",
-                                xaxis_title="Strike Price ($)",
-                                yaxis_title="Option Price ($)",
-                                plot_bgcolor="#111111",
-                                paper_bgcolor="#111111",
-                                legend=dict(y=0.9, x=0.8),
-                                height=500
-                            )
-                            st.plotly_chart(fig_fit, use_container_width=True)
-                            
-                            mae = np.mean(np.abs(model_prices - subset['marketPrice']))
-                            st.caption(f"Mean Absolute Error (MAE): **${mae:.2f}**")
+                            with col_plot:
+                                fig_fit = go.Figure()
+                                # Market
+                                fig_fit.add_trace(go.Scatter(
+                                    x=subset['K'], y=subset['marketPrice'],
+                                    mode='markers', name='Market Price',
+                                    marker=dict(color='white', size=8, line=dict(width=1, color='gray'))
+                                ))
+                                # Model
+                                fig_fit.add_trace(go.Scatter(
+                                    x=subset['K'], y=model_prices,
+                                    mode='lines', name='DDN Model',
+                                    line=dict(color='#FF4B4B', width=3)
+                                ))
+                                
+                                spot_price = subset['S0'].iloc[0]
+                                fig_fit.add_vline(x=spot_price, line_dash="dash", line_color="gray", annotation_text="Spot")
+                                
+                                fig_fit.update_layout(
+                                    template="plotly_dark",
+                                    title=f"<b>Calibration Fit</b> | {target_date.date()} | Spot: ${spot_price:.2f}",
+                                    xaxis_title="Strike Price ($)",
+                                    yaxis_title="Option Price ($)",
+                                    plot_bgcolor="#111111",
+                                    paper_bgcolor="#111111",
+                                    legend=dict(y=0.9, x=0.8),
+                                    height=500
+                                )
+                                st.plotly_chart(fig_fit, use_container_width=True)
+                                
+                                mae = np.mean(np.abs(model_prices - subset['marketPrice']))
+                                st.caption(f"Mean Absolute Error (MAE): **${mae:.2f}**")
 
 # ==============================================================================
 # TAB 3: IMPLICATIONS
 # ==============================================================================
 with tab3:
-    st.markdown("### Key Takeaways")
+    # --- 1. PERFORMANCE SCORECARD (Compact Status Bar) ---
+    st.markdown("### 🏆 Performance Scorecard")
+
+    # CSS to style the metrics as a compact bar
+    st.markdown("""
+    <style>
+    /* Style the container of the metric */
+    div[data-testid="metric-container"] {
+        background-color: #1E1E1E; /* Dark Grey Background */
+        padding: 10px 15px;
+        border-radius: 8px;
+        border-left: 4px solid #FF4B4B; /* Red Accent */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    /* Style the Value (Number) */
+    [data-testid="stMetricValue"] {
+        color: #FF4B4B !important;
+        font-size: 1.8rem !important; /* Much smaller than before */
+    }
+    /* Style the Label */
+    [data-testid="stMetricLabel"] {
+        color: #FFFFFF !important;
+        font-size: 0.9rem !important;
+        font-weight: normal;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Simple 3-column layout without extra text to save space
+    m1, m2, m3 = st.columns(3)
     
-    c1, c2, c3 = st.columns(3)
+    with m1:
+        st.metric(label="Calibration Speed", value="~0.3s")
+        
+    with m2:
+        st.metric(label="Global Accuracy (MRE)", value="5.55%")
+
+    with m3:
+        st.metric(label="Robustness Strategy", value="3 x Starts")
+
+    st.markdown("---")
+
+    # --- 2. STRATEGIC IMPLICATIONS (Main Focus) ---
+    st.markdown("### 📌 Strategic Implications")
     
-    with c1:
+    i1, i2, i3 = st.columns(3, gap="medium")
+    
+    with i1:
         st.markdown("""
-        <div class="red-box">
-            <h4>1. Speed & Scalability</h4>
-            <p>Sub-second calibration enables <b>Real-Time Risk Management</b> (e.g., High Frequency Trading) impossible with standard integrators.</p>
+        <div class="red-box" style="height: 100%;">
+            <h4>1. High-Frequency Ready</h4>
+            <p>The DDN removes the calculation bottleneck (Numerical Integration).</p>
+            <p><b>Impact:</b> Enables <b>Intraday Recalibration</b> and real-time risk management (XVA, Hedging) for high-frequency trading desks.</p>
         </div>
         """, unsafe_allow_html=True)
         
-    with c2:
+    with i2:
         st.markdown("""
-        <div class="red-box">
-            <h4>2. Regime Robustness</h4>
-            <p>The model survived <b>Volmageddon (2018)</b> and <b>COVID (2020)</b>. Errors spike but mean-revert quickly, proving stability.</p>
+        <div class="red-box" style="height: 100%;">
+            <h4>2. Stress Tested</h4>
+            <p>Generalized successfully across <b>Volmageddon (2018)</b> and <b>COVID-19 (2020)</b>.</p>
+            <p><b>Impact:</b> Proves that Neural Surrogates are not "black boxes" that break under stress; they are safe for production deployment.</p>
         </div>
         """, unsafe_allow_html=True)
         
-    with c3:
+    with i3:
         st.markdown("""
-        <div class="red-box">
-            <h4>3. Differential Learning</h4>
-            <p>Training on <b>Greeks (Gradients)</b> forces the network to learn the geometry of the market, not just the prices.</p>
+        <div class="red-box" style="height: 100%;">
+            <h4>3. Geometric Learning</h4>
+            <p>Standard networks often overfit specific price points.</p>
+            <p><b>Impact:</b> By minimizing the error of the <b>Gradients (Sobolev Training)</b>, the DDN learns the actual physics/shape of the volatility surface.</p>
         </div>
         """, unsafe_allow_html=True)
