@@ -222,7 +222,7 @@ vol_df = get_aapl_volatility()
 df_ts = backtest_df.join(vol_df, how='left') # Join volatility onto the backtest results
 
 # --- SIDEBAR ---
-st.sidebar.markdown("### 🎨 Background")    
+st.sidebar.markdown("### 🎨 Background")  
 apply_bg_to_all = st.sidebar.checkbox("Apply Background to All Slides", value=False)
 # Checkbox for controlling the background
 if apply_bg_to_all:
@@ -250,9 +250,9 @@ with tab1:
             <div class="red-box">
                 <h4>Concept</h4>
                 <ul>
-                    <li><b>The Problem:</b> Black-Scholes assumes <span class="highlight">Constant Volatility</span> (fails to explain the Smile).</li>
-                    <li><b>The Heston Solution:</b> Volatility ($v_t$) is treated as a <span class="highlight">random process</span>.</li>
-                    <li><b>Key Feature:</b> Volatility is correlated with the Asset Price ($S_t$), capturing real market dynamics.</li>
+                    <li><b>The Problem:</b> Black-Scholes assumes <span class="highlight">constant</span> volatility (fails to explain the Smile).</li>
+                    <li><b>The Heston Solution:</b> Volatility <img src="https://latex.codecogs.com/svg.latex?\color{white}v_t"> is treated as a <span class="highlight">random process</span>.</li>
+                    <li><b>Key Feature:</b> Volatility is correlated with the asset price <img src="https://latex.codecogs.com/svg.latex?\color{white}S_t">, capturing real market dynamics.</li>
                 </ul>
             </div>
             """, unsafe_allow_html=True)
@@ -271,7 +271,7 @@ with tab1:
         st.markdown("### ⚠️ The Challenge: Traditional Calibration")
         
         st.markdown("""
-        <p>To use the model, we must find the parameters <span class="highlight">Θ = {κ, λ, σ, ρ, v₀}</span> that minimize the error between Market Prices and Model Prices:</p>
+        <p>To use the model, we must find the parameters <span class="highlight">Θ = {κ, λ, σ, ρ, v₀}</span> that minimize the error between market and model prices:</p>
         """, unsafe_allow_html=True)
         
         st.latex(r'''
@@ -311,8 +311,8 @@ with tab1:
                 <p>We replace the slow integral solver with a <b>Neural Network</b> trained using <span class="highlight">Sobolev Training</span>.</p>
                 <ul>
                     <li><b>Instant Pricing:</b> Matrix multiplication replaces integration.</li>
-                    <li><b>Instant Gradients:</b> We use Backpropagation to get Exact Gradients (Neural Greeks) instantly.</li>
-                    <li><b>Result:</b> The optimizer runs millions of times faster.</li>
+                    <li><b>Instant Gradients:</b> We use backpropagation to get exact gradients (neural greeks) quickly.</li>
+                    <li><b>Result:</b> The optimizer runs faster.</li>
                 </ul>
             </div>
             """, unsafe_allow_html=True)
@@ -336,7 +336,7 @@ with tab1:
         st.markdown("""
         **The Gap:** Prior DDN research (Zhang et al., 2025) relied on static datasets, leaving real-world longitudinal performance untested.
         
-        **Our Approach:** We conducted a rigorous **7-year backtest** (AAPL 2016-2023) to answer:
+        **Our Approach:** We used a similar approach and conducted a **7-year backtest** (AAPL 2016-2023) to answer:
         """)
         st.markdown("""
         <div class="red-box">
@@ -454,8 +454,8 @@ with tab2:
                 <h4>Why the asymmetry? (Put-Call Parity)</h4>
                 <ul>
                     <li>Puts are priced via Parity: <img src="https://latex.codecogs.com/svg.latex?\color{white}P_{model}=C_{model}^{DDN}-S_0e^{-qt}+Ke^{-rt}" style="vertical-align:middle;height:1.5em;" alt="Put-Call Parity with Dividends" /></li>
-                    <li>An <b>OTM Put</b> corresponds to an <span class='highlight'>Expensive ITM Call</span>.</li>
-                    <li>A small error on the expensive Call becomes a <b>massive relative error</b> on the cheap Put.</li>
+                    <li>An <b>OTM Put</b> corresponds to an <span class='highlight'>xxpensive ITM Call</span>.</li>
+                    <li>A small error on the expensive Call becomes a <b>large relative error</b> on the cheap Put.</li>
                 </ul>
             </div>
             """, unsafe_allow_html=True)
@@ -628,7 +628,7 @@ with tab3:
             "question": "Error Dynamics?",
             "finding_header": "Error Determinants",
             "finding_body": """
-            **Volatility Correlation.** Calibration residuals exhibit a positive correlation with realized market volatility, notably during stress events.
+            **Market Stress Correlation.** In- and out-of-sample MRE increase during phases of market stress such as the COVID-19 crash.
             """,
             "implication_header": "Performance Monitoring",
             "implication_body": """
