@@ -423,7 +423,7 @@ with tab2:
             <div class="red-box">
                 <h4>Why the asymmetry? (Put-Call Parity)</h4>
                 <ul>
-                    <li>Puts are priced via Parity: <img src="https://latex.codecogs.com/svg.latex?\color{white}P_{model}=C_{model}^{DDN}-S_0e^{-q\tau}+Ke^{-r\tau}" style="vertical-align:middle;height:1.5em;" alt="Put-Call Parity with Dividends" /></li>
+                    <li>Puts are priced via Parity: <img src="https://latex.codecogs.com/svg.latex?\color{white}P_{model}=C_{model}^{DDN}-S_0e^{-qt}+Ke^{-rt}" style="vertical-align:middle;height:1.5em;" alt="Put-Call Parity with Dividends" /></li>
                     <li>An <b>OTM Put</b> corresponds to an <span class='highlight'>Expensive ITM Call</span>.</li>
                     <li>A small error on the expensive Call becomes a <b>massive relative error</b> on the cheap Put.</li>
                 </ul>
