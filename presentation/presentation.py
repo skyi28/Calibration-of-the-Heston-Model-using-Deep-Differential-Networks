@@ -10,6 +10,7 @@ from pathlib import Path
 import json
 import os
 import yfinance as yf
+import base64
 
 # Add project root to path to import the Deep Differential Network
 project_root = Path(__file__).resolve().parents[1]
@@ -193,12 +194,39 @@ def predict_real_prices(model, df, params, sx, sy):
     pred_norm = (pred_scaled.flatten() - sy.min_[0]) / sy.scale_[0]
     return pred_norm * df['S0'].values
 
-# --- MAIN APP LOGIC ---
+def set_page_background(bin_file):
+    try:
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        bg_image_base64 = base64.b64encode(data).decode()
+        page_bg_img_css = f"""
+        <style>
+        [data-testid="stAppViewContainer"] > .main {{
+            background-image: linear-gradient(rgba(0, 0, 15, 0.7), rgba(0, 0, 15, 0.7)), url("data:image/png;base64,{bg_image_base64}");
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: local;
+        }}
+        </style>
+        """
+        st.markdown(page_bg_img_css, unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.error(f"Background image not found. Please ensure '{bin_file}' exists.")
+    
+
 
 # Load and merge the two datasets
 backtest_df = load_backtest_results()
 vol_df = get_aapl_volatility()
 df_ts = backtest_df.join(vol_df, how='left') # Join volatility onto the backtest results
+
+# --- SIDEBAR ---
+st.sidebar.markdown("### 🎨 Background")    
+apply_bg_to_all = st.sidebar.checkbox("Apply Background to All Slides", value=False)
+# Checkbox for controlling the background
+if apply_bg_to_all:
+    set_page_background('presentation/images/title_visual.png')
 
 # --- HEADER ---
 st.markdown("<h1 style='text-align: center; color: white;'>Calibration of the <span class='highlight'>Heston Model</span><br>using Neural Networks</h1>", unsafe_allow_html=True)
@@ -207,6 +235,7 @@ st.markdown("<h1 style='text-align: center; color: white;'>Calibration of the <s
 tab1, tab2, tab3 = st.tabs(["1️⃣ The Methodology", "2️⃣ Results & Analysis", "3️⃣ Conclusion & Implications"])
 
 
+# --- MAIN APP LOGIC ---
 # ==============================================================================
 # TAB 1: THE METHODOLOGY
 # ==============================================================================
