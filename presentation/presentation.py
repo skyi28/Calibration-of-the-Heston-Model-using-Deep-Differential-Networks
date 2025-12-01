@@ -303,6 +303,7 @@ with tab1:
             
     # --- PART 4: RESEARCH GAP & MOTIVATION ---
     with st.expander("🔬 Research Gap & Motivation", expanded=False):
+        st.markdown("### 🔬 Research Gap & Motivation")
         st.markdown("""
         **The Gap:** Prior DDN research (Zhang et al., 2025) relied on static datasets, leaving real-world longitudinal performance untested.
         
@@ -327,7 +328,7 @@ with tab2:
         st.warning("⚠️ Backtest results not found. Ensure `data/backtest_results.csv` exists and is correctly formatted.")
     else:
         with st.expander("📊 Backtest Results (2016-2023)", expanded=False):
-            st.markdown("### Backtest Results (2016-2023)")
+            st.markdown("### 📊 Backtest Results (2016-2023)")
             
             fig_ts = go.Figure()
 
@@ -401,7 +402,7 @@ with tab2:
         # SECTION B: HEATMAPS & PARITY ANALYSIS
         # -------------------------------------------------------------------------
         with st.expander("🗺️ Error Analysis by Moneyness & Maturity", expanded=False):
-            st.markdown("### Error Analysis by Moneyness & Maturity")
+            st.markdown("### 🗺️ Error Analysis by Moneyness & Maturity")
             
             rows, cols, calls, puts = get_heatmap_data()
             
@@ -435,8 +436,11 @@ with tab2:
         # ==============================================================================
 
         with st.expander("🔬 Model Validation: DDN vs. Analytical Pricer", expanded=False):
+            st.markdown("### 🔬 Model Validation: DDN vs. Analytical Pricer")
             st.markdown("""
-            **The Test:** We fed DDN-calibrated parameters into an independent **Analytical Engine** (QuantLib) to measure pure approximation error.
+            *   **The Test:** We took the parameters calibrated by the DDN and fed them into a standard, independent analytical engine (QuantLib's AnalyticHestonEngine).
+            *   **The Goal:** Compare the MRE from the DDN surrogate against the MRE from the "True Heston" pricer.
+            *   **The Question:** Is the DDN a high-fidelity emulator, or does it introduce significant error?
             """)
 
             # --- 2. DATA EXTRACTION (TABLE 12 & 13) ---
@@ -467,8 +471,8 @@ with tab2:
         # -------------------------------------------------------------------------
         # SECTION D: REAL DATA SURFACE FIT
         # -------------------------------------------------------------------------
-        with st.expander("📈 Pricing Fit (Real Data)", expanded=False):
-            st.markdown("### Pricing Fit (Real Data)")
+        with st.expander("📈 Pricing Fit", expanded=False):
+            st.markdown("### 📈 Pricing Fit")
             
             res_df = df_ts # Reuse the already loaded dataframe
             model, sx, sy = load_model_assets()
@@ -608,7 +612,7 @@ with tab3:
     for item in synthesis_data:
         with st.expander(f"🔍 RQ {item['id']}: {item['question']}", expanded=False):
             st.markdown(
-                f"#### <span class='highlight'>RQ {item['id']}: {item['question']}</span>", 
+                f"#### <span class='highlight'>🔍 RQ {item['id']}: {item['question']}</span>", 
                 unsafe_allow_html=True
             )
 
