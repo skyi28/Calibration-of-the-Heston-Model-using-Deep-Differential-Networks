@@ -314,6 +314,13 @@ with tab1:
                     <li><b>Instant Gradients:</b> We use backpropagation to get exact gradients (neural greeks) quickly.</li>
                     <li><b>Result:</b> The optimizer runs faster.</li>
                 </ul>
+                <h4>Training & Optimization ⚙️</h4>
+                <p>The network architecture was rigorously optimized to ensure high-fidelity approximation:</p>
+                <ul>
+                    <li><b>Synthetic Training:</b> Trained on 200k samples generated via <span class="highlight">LHS</span> to ensure uniform parameter coverage.</li>
+                    <li><b>Optimizer & Learning Rate:</b> Used the <span class="highlight">AdamW</span> optimizer with a <span class="highlight">CosineDecay</span> learning rate restart.</li>
+                    <li><b>Hyperparameter Tuning:</b> Utilized the <span class="highlight">Hyperband</span> algorithm to identify the optimal topology (7 layers, 224 neurons, swish activation).</li>
+                </ul>
             </div>
             """, unsafe_allow_html=True)
             
@@ -454,7 +461,7 @@ with tab2:
                 <h4>Why the asymmetry? (Put-Call Parity)</h4>
                 <ul>
                     <li>Puts are priced via Parity: <img src="https://latex.codecogs.com/svg.latex?\color{white}P_{model}=C_{model}^{DDN}-S_0e^{-qt}+Ke^{-rt}" style="vertical-align:middle;height:1.5em;" alt="Put-Call Parity with Dividends" /></li>
-                    <li>An <b>OTM Put</b> corresponds to an <span class='highlight'>xxpensive ITM Call</span>.</li>
+                    <li>An <b>OTM Put</b> corresponds to an <span class='highlight'>expensive ITM Call</span>.</li>
                     <li>A small error on the expensive Call becomes a <b>large relative error</b> on the cheap Put.</li>
                 </ul>
             </div>
@@ -604,7 +611,7 @@ with tab3:
             "question": "Robustness across market regimes?",
             "finding_header": "Longitudinal Stability",
             "finding_body": """
-            **Regime Resilience.** Calibration error remained <span class='highlight'>bounded</span> during the COVID-19 exogenous shock (Avg MRE: 5.59%) and exhibited rapid mean reversion post-crisis.
+            **Regime Resilience.** Calibration error remained bounded during the COVID-19 exogenous shock (Avg MRE: 5.59%) and exhibited rapid mean reversion post-crisis.
             """,
             "implication_header": "Operational Viability",
             "implication_body": """
@@ -616,11 +623,11 @@ with tab3:
             "question": "Generalization vs. Overfitting?",
             "finding_header": "Generalization Capability",
             "finding_body": """
-            **Minimal Variance.** The negligible divergence between In-Sample (4.29%) and Out-of-Sample (4.49%) MRE indicates **minimal overfitting** to the training data.
+            **Minimal Difference.** The negligible divergence between In-Sample (4.29%) and Out-of-Sample (4.49%) MRE indicates **minimal overfitting** to the training data.
             """,
-            "implication_header": "Surface Approximation",
+            "implication_header": "Correct Approximations",
             "implication_body": """
-            **Latent Feature Learning.** The results suggest the model effectively approximates the underlying volatility surface topology rather than memorizing specific contract prices.
+            **Latent Feature Learning.** The results suggest the model effectively approximates Heston formulas for option prices and their gradients rather than memorizing specific contract prices.
             """
         },
         {
@@ -628,11 +635,11 @@ with tab3:
             "question": "Error Dynamics?",
             "finding_header": "Error Determinants",
             "finding_body": """
-            **Market Stress Correlation.** In- and out-of-sample MRE increase during phases of market stress such as the COVID-19 crash.
+            **Impact of Market Stress.** In- and out-of-sample MRE increase during phases of market stress such as the COVID-19 crash.
             """,
             "implication_header": "Performance Monitoring",
             "implication_body": """
-            **Systematic Behavior.** The deterministic nature of the error degradation under stress facilitates the establishment of quantifiable confidence intervals.
+            **Systematic Behavior.** Understanding error dynamics enables proactive monitoring and adjustment of calibration strategies during volatile periods.
             """
         }
     ]
