@@ -35,7 +35,7 @@ WEIGHTS_PATH = MODEL_DIR / "ddn.weights.h5"                 # Path for the model
 STOCK_CACHE_FILE = DATA_DIR / "AAPL_stock_history.csv"      # Path for the cached stock data
 
 # --- Data Set Generation Configuration ---
-NUM_SAMPLES = 200_000                                     # Number of samples to generate
+NUM_SAMPLES = 200_000                                       # Number of samples to generate
 MIN_TAU = 5 / 365                                           # Shortest maturity of options in years
 MAX_TAU = 2.5                                               # Longest maturity of options in years
 MAX_RISK_FREE_RATE = 0.1                                    # Maximum risk-free rate
