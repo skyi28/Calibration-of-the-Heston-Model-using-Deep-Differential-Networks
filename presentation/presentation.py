@@ -379,7 +379,7 @@ with tab2:
             fig_ts.add_trace(go.Scatter(
                 x=df_ts.index, y=df_ts['in_sample_mre'],
                 mode='lines', name='Error (MRE)',
-                line=dict(color='#FF4B4', width=1.5)
+                line=dict(color='#FF4B4B', width=1.5)
             ))
 
             # Plot 3: Out-of-Sample MRE (highlighted)
