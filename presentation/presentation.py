@@ -460,11 +460,11 @@ with tab2:
 
             st.markdown("""
             <div class="red-box">
-                <h4>Why the asymmetry? (Put-Call Parity)</h4>
+                <h4>Pricing Put Options via Put-Call Parity</h4>
                 <ul>
                     <li>Puts are priced via Parity: <img src="https://latex.codecogs.com/svg.latex?\color{white}P_{model}=C_{model}^{DDN}-S_0e^{-qt}+Ke^{-rt}" style="vertical-align:middle;height:1.5em;" alt="Put-Call Parity with Dividends" /></li>
                     <li>An <b>OTM Put</b> corresponds to an <span class='highlight'>expensive ITM Call</span>.</li>
-                    <li>A small error on the expensive Call becomes a <b>large relative error</b> on the cheap Put.</li>
+                    <li>An absolute small error on the expensive Call becomes a <b>large relative error</b> on the cheap Put.</li>
                 </ul>
             </div>
             """, unsafe_allow_html=True)
@@ -563,7 +563,7 @@ with tab2:
                             st.error("No liquid options found.")
                         else:
                             tau_map = {t: f"{int(t*365)} Days (T={t:.2f})" for t in available_taus}
-                            default_idx = len(available_taus)//2
+                            default_idx = 0# len(available_taus)//2
                             selected_tau_val = st.selectbox("Select Maturity", options=available_taus, format_func=lambda x: tau_map[x], index=default_idx)
                             
                             subset = day_df[np.isclose(day_df['tau'], selected_tau_val, atol=0.001)].sort_values('K')
