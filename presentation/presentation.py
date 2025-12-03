@@ -337,6 +337,8 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
             
+        st.image("presentation/images/ddn_architecture.png", caption="DDN Architecture Overview", use_column_width=True)
+            
     # --- PART 4: RESEARCH GAP & MOTIVATION ---
     with st.expander("🔬 Research Gap & Motivation", expanded=False):
         st.markdown("### 🔬 Research Gap & Motivation")
