@@ -229,7 +229,7 @@ if apply_bg_to_all:
     set_page_background('presentation/images/title_visual.png')
 
 # --- HEADER ---
-st.markdown("<h1 style='text-align: center; color: white;'>Calibration of the <span class='highlight'>Heston Model</span><br>using Neural Networks</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: white;'>Calibration of the <span class='highlight'>Heston Model</span><br>using <span class='highlight'>Deep Differential Networks</span></h1>", unsafe_allow_html=True)
 
 # --- TABS ---
 tab1, tab2, tab3 = st.tabs(["1️⃣ The Methodology", "2️⃣ Results & Analysis", "3️⃣ Conclusion & Implications"])
@@ -250,8 +250,8 @@ with tab1:
             <div class="red-box">
                 <h4>Concept</h4>
                 <ul>
-                    <li><b>The Problem:</b> Black-Scholes assumes <span class="highlight">constant</span> volatility (fails to explain the Smile).</li>
-                    <li><b>The Heston Solution:</b> Volatility <img src="https://latex.codecogs.com/svg.latex?\color{white}v_t"> is treated as a <span class="highlight">random process</span>.</li>
+                    <li><b>The Problem:</b> Black-Scholes assumes <span class="highlight">constant</span> volatility (fails to explain the IV smile).</li>
+                    <li><b>The Heston Solution:</b> Volatility <img src="https://latex.codecogs.com/svg.latex?\color{white}v_t"> is treated as a <span class="highlight">stochastic process</span>.</li>
                     <li><b>Key Feature:</b> Volatility is correlated with the asset price <img src="https://latex.codecogs.com/svg.latex?\color{white}S_t">, capturing real market dynamics.</li>
                 </ul>
             </div>
@@ -260,10 +260,11 @@ with tab1:
         with col2:
             st.markdown("**Heston Dynamics:**")
             st.latex(r'''
-            \begin{aligned}
-            dS_t &= r S_t dt + \sqrt{v_t} S_t dW_t^S \\
-            dv_t &= \kappa(\lambda - v_t) dt + \sigma \sqrt{v_t} dW_t^v
-            \end{aligned}
+                \begin{array}{l l}
+                dS_t &= r S_t dt + \sqrt{v_t} S_t dW_t^S \\
+                dv_t &= \kappa(\lambda - v_t) dt + \sigma \sqrt{v_t} dW_t^v \\
+                E[dW_t^S dW_t^v] &= \rho dt
+                \end{array}
             ''')
 
     # --- PART 2: THE CHALLENGE ---
@@ -293,7 +294,7 @@ with tab1:
             st.markdown("""
             <div class="red-box">
                 <h4>Why it is Slow <span style='font-size:20px'>🐢</span></h4>
-                <p>1. <b>Gradient Calculation:</b> Calculating derivatives (∇Θ) requires solving the pricing engine 10x per step (Finite Differences).</p>
+                <p>1. <b>Gradient Calculation:</b> Calculating derivatives (∇Θ) requires solving the pricing equation 10x per step (Finite Differences).</p>
                 <p>2. <b>Integration Cost:</b> Every pricing call requires solving a complex integral.</p>
             </div>
             """, unsafe_allow_html=True)
@@ -308,7 +309,7 @@ with tab1:
             st.markdown("""
             <div class="red-box">
                 <h4>The DDN Surrogate <span style='font-size:20px'>🚀</span></h4>
-                <p>We replace the slow integral solver with a <b>Neural Network</b> trained using <span class="highlight">Sobolev Training</span>.</p>
+                <p>We replace the slow integral solver with a <b>DDN</b> trained using <span class="highlight">Sobolev Training</span>.</p>
                 <ul>
                     <li><b>Instant Pricing:</b> Matrix multiplication replaces integration.</li>
                     <li><b>Instant Gradients:</b> We use backpropagation to get exact gradients (neural greeks) quickly.</li>
@@ -319,7 +320,7 @@ with tab1:
                 <ul>
                     <li><b>Synthetic Training:</b> Trained on 200k samples generated via <span class="highlight">LHS</span> to ensure uniform parameter coverage.</li>
                     <li><b>Optimizer & Learning Rate:</b> Used the <span class="highlight">AdamW</span> optimizer with a <span class="highlight">CosineDecay</span> learning rate restart.</li>
-                    <li><b>Hyperparameter Tuning:</b> Utilized the <span class="highlight">Hyperband</span> algorithm to identify the optimal topology (7 layers, 224 neurons, swish activation).</li>
+                    <li><b>Hyperparameter Tuning:</b> Utilized the <span class="highlight">Hyperband</span> algorithm to identify the optimal architecture (7 layers, 224 neurons, swish activation).</li>
                 </ul>
             </div>
             """, unsafe_allow_html=True)
@@ -343,7 +344,7 @@ with tab1:
     with st.expander("🔬 Research Gap & Motivation", expanded=False):
         st.markdown("### 🔬 Research Gap & Motivation")
         st.markdown("""
-        **The Gap:** Prior DDN research (Zhang et al., 2025) relied on static datasets, leaving real-world longitudinal performance untested.
+        **The Gap:** Prior DDN research (Zhang et al., 2025) checked their performance on a single day dataset, leaving the performance over a longer time period untested.
         
         **Our Approach:** We used a similar approach and conducted a **7-year backtest** (AAPL 2016-2023) to answer:
         """)
@@ -351,9 +352,9 @@ with tab1:
         <div class="red-box">
             <h4>Key Research Questions</h4>
             <ul>
-                <li><b>Longitudinal Robustness:</b> Does calibration survive <span class="highlight">diverse regimes</span> (Crashes, Low Vol, Hikes)?</li>
-                <li><b>Generalization:</b> How does the model perform <span class="highlight">out-of-sample</span>?</li>
-                <li><b>Error Dynamics:</b> How does <span class="highlight">market stress</span> impact the models performance?</li>
+                <li><b>Longitudinal Robustness:</b> How does the calibration error behave during <span class="highlight">diverse regimes</span> (Crashes, Low Vol, Hikes)?</li>
+                <li><b>Generalization:</b> Does the approach produce <span class="highlight">suiteable parameters</span>?</li>
+                <!-- <li><b>Error Dynamics:</b> How does <span class="highlight">market stress</span> impact the models performance?</li> -->
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -610,7 +611,7 @@ with tab3:
     synthesis_data = [
         {
             "id": "1",
-            "question": "Robustness across market regimes?",
+            "question": "How does the calibration error behave during diverse regimes?",
             "finding_header": "Longitudinal Stability",
             "finding_body": """
             **Regime Resilience.** Calibration error remained bounded during the COVID-19 exogenous shock (Avg MRE: 5.59%) and exhibited rapid mean reversion post-crisis.
@@ -620,28 +621,28 @@ with tab3:
             **Stable Deployment.** The framework demonstrates consistent performance across diverse market conditions, supporting its suitability for continuous historical analysis.
             """
         },
+        # {
+        #     "id": "2",
+        #     "question": "Error Dynamics?",
+        #     "finding_header": "Error Determinants",
+        #     "finding_body": """
+        #     **Impact of Market Stress.** MRE increase during phases of market stress such as the COVID-19 crash.
+        #     """,
+        #     "implication_header": "Performance Monitoring",
+        #     "implication_body": """
+        #     **Systematic Behavior.** Understanding error dynamics enables proactive monitoring and adjustment of calibration strategies during volatile periods.
+        #     """
+        # },
         {
             "id": "2",
-            "question": "Generalization vs. Overfitting?",
-            "finding_header": "Generalization Capability",
+            "question": "Does the approach produce suiteable parameters?",
+            "finding_header": "Suitable Parameters",
             "finding_body": """
-            **Minimal Difference.** The negligible divergence between In-Sample (4.29%) and Out-of-Sample (4.49%) MRE indicates **minimal overfitting** to the training data.
+            **Suiteable Parameters.** The average pricing error of 4.87% using the generated parameters confirms the DDN generates valid Heston parameters.
             """,
-            "implication_header": "Correct Approximations",
+            "implication_header": "Speedup Calibration",
             "implication_body": """
-            **Latent Feature Learning.** The results suggest the model effectively approximates Heston formulas for option prices and their gradients rather than memorizing specific contract prices.
-            """
-        },
-        {
-            "id": "3",
-            "question": "Error Dynamics?",
-            "finding_header": "Error Determinants",
-            "finding_body": """
-            **Impact of Market Stress.** In- and out-of-sample MRE increase during phases of market stress such as the COVID-19 crash.
-            """,
-            "implication_header": "Performance Monitoring",
-            "implication_body": """
-            **Systematic Behavior.** Understanding error dynamics enables proactive monitoring and adjustment of calibration strategies during volatile periods.
+            **Speedup Calibration.** The approach speeds up the calibration of the Heston model making it suitable for near real-time applications.
             """
         }
     ]
