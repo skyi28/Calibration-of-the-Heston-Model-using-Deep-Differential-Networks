@@ -295,7 +295,7 @@ with tab1:
             <div class="red-box">
                 <h4>Why it is Slow <span style='font-size:20px'>🐢</span></h4>
                 <p>1. <b>Gradient Calculation:</b> Calculating derivatives (∇Θ) requires solving the pricing equation 10x per step (Finite Differences).</p>
-                <p>2. <b>Integration Cost:</b> Every pricing call requires solving a complex integral.</p>
+                <p>2. <b>Integration Cost:</b> Every pricing call requires solving a complex integral.<br><img src="https://quicklatex.com/cache3/c8/ql_0f52ea2944545332697ee026518f77c8_l3.png"></p>
             </div>
             """, unsafe_allow_html=True)
 
