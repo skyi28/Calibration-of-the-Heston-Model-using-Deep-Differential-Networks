@@ -62,19 +62,25 @@ Calibrating the Heston model requires finding five parameters ($\kappa, \lambda,
 │   ├── AAPL_stock_history.csv  # AAPL historic stock data (yfinance)
 │   ├── backtest_results.csv    # Output results from historical calibration
 │   ├── descriptive_analysis/   # Output tables and plots from data analysis
-|   ├── yield curve data        # CSV files for historical risk-free rates
+│   ├── yield curve data        # CSV files for historical risk-free rates
 │   └── kaggle                  # Subfolder for option data
 │       └── aapl_year_year.csv  # Historical option data
+├── data_generation/
+|   └── generate_dataset.py     # Generates synthetic Heston data (Price + Greeks)
+├── LaTeX/                      # LaTeX files for generating the paper
 ├── model/
-│   ├── ddn.py                  # Custom Keras Model (Deep Differential Network class)
+│   └── ddn.py                  # Custom Keras Model (Deep Differential Network class)
+├── models/
 │   ├── ddn.weights.h5          # Trained model weights
 │   └── scaler_*.save           # Scikit-learn scalers for inputs/outputs
+├── presentation
+|   └── presentation.py         # Streamlit application for presenting the results
 ├── scripts/
-│   ├── generate_dataset.py     # Generates synthetic Heston data (Price + Greeks)
 │   ├── descriptive_analysis.py # Generates statistical reports and data filtering tables
 │   ├── tune.py                 # Hyperparameter Tuning (Hyperband)
 │   ├── train.py                # Trains the DDN (AdamW + Cosine Decay)
 │   ├── backtest.py             # Runs historical calibration (The "Engine")
+│   ├── validate_calibration.py # Calculates option prices with the Heston parameters determined by the DDN 
 │   └── generate_plots.py       # Visualizes final backtest results
 └── plots/                      # Output directory for final thesis graphs
 ```
@@ -115,7 +121,7 @@ python scripts/train.py
 
 ### Step 5: Run the Backtest (The "Detective")
 Calibrate the model to historical AAPL option data (2016–2023). This script:
-1.  Calculates the daily implied risk-free rate using Puts/Calls.
+1.  Calculates the daily implied dividend yield rate using Puts/Calls.
 2.  Filters for liquid options (matches Step 2 logic).
 3.  Calibrates on 80% of data (In-Sample).
 4.  Tests accuracy on the hidden 20% (Out-of-Sample).
@@ -124,7 +130,17 @@ python scripts/backtest.py
 ```
 *   *Output:* `data/backtest_results.csv`
 
-### Step 6: Visualize Results
+### Step 6: Validate the found Heston Parameters
+Uses the found Heston parameters to price options. This script:
+1.  Samples days from each market regime
+2.  Filters for liquid options (matches Step 2 logic).
+3.  Prices those options by plugging the calibrated parameters into the QuantLib's pricing engine.
+```bash
+python scripts/validate_calibration.py
+```
+*   *Output:* `None`
+
+### Step 7: Visualize Results
 Generate the thesis-ready plots and tables (Error Heatmaps, Time Series Analysis, Regime Table).
 ```bash
 python scripts/generate_plots.py
@@ -158,7 +174,7 @@ For every trading day:
 
 ## 6. Performance
 
-The resulting model demonstrates exceptional accuracy and robustness:
-*   **In-Sample MRE:** 4.29% (matching the paper's reported 4.64%).
-*   **Out-of-Sample MRE:** ~4.45% (Demonstrating strong generalization).
+The resulting model demonstrates accuracy and robustness:
+*   **Calibration MRE:** 4.14% (matching the paper's reported 4.64%).
+*   **Validation MRE:** ~4.34% (Demonstrating strong generalization).
 *   **Stability:** Successfully handles the 2020 COVID volatility spike and the 2022 interest rate regime shift without requiring retraining.
