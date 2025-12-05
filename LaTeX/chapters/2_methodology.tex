@@ -348,7 +348,7 @@ To validate the performance of the trained \ac{ddn} in a realistic setting, a co
     \item \textit{Multi-Start Optimization:} To enhance the probability of finding a global optimum and avoid local minima, the optimization process was initiated from three random starting points, with the best-fitting parameter set being retained for that day's evaluation.
 \end{enumerate}
 
-The primary metric for evaluating the accuracy of the daily calibration is the \ac{mre}, which measures the average relative deviation between model prices and market prices. This metric was calculated separately for the calibration set (in-sample error) and the held-out test set (out-of-sample error) for each trading day to assess the model's ability to generalize to unseen options. The \ac{mre} is defined as:
+The primary metric for evaluating the accuracy of the daily calibration is the \ac{mre}, which measures the average relative deviation between model prices and market prices. This metric was calculated separately for the calibration set (calibration error) and the held-out test set (validation error) for each trading day to assess the model's ability to generalize to unseen options. The \ac{mre} is defined as:
 \begin{equation}
     MRE = \frac{1}{M} \sum_{m=1}^{M} \frac{\left| C_{\text{model}}^{(m)} - C_{\text{market}}^{(m)} \right|}{C_{\text{market}}^{(m)}}
 \end{equation}
