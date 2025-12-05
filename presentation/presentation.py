@@ -179,8 +179,8 @@ def get_heatmap_data():
     maturities = ['< 3M', '3M-6M', '6M-1Yr', '> 1Yr']
     moneyness = ['< 0.95', '0.95-1.05', '> 1.05']
     
-    call_data = [[4.4, 5.0, 12.7], [5.3, 4.5, 6.0], [4.2, 3.2, 5.0], [2.3, 2.9, 10.4]]
-    put_data = [[28.1, 8.2, 1.0], [27.4, 4.5, 1.3], [24.5, 3.4, 1.6], [24.4, 4.4, 3.0]]
+    call_data = [[4.3, 5.0, 12.2], [5.2, 4.1, 5.9], [4.2, 3.0, 4.7], [2.5, 3.2, 9.6]]
+    put_data = [[23.4, 9.4, 1.0], [24.4, 4.3, 1.3], [22.9, 3.4, 1.6], [25.8, 4.6, 3.0]]
     return maturities, moneyness, call_data, put_data
 
 def predict_real_prices(model, df, params, sx, sy):
@@ -378,19 +378,19 @@ with tab2:
                 fillcolor='rgba(255, 255, 255, 0.1)'
             ))
             
-            # Plot 2: MRE
+            # Plot 2: Calibration MRE
             fig_ts.add_trace(go.Scatter(
-                x=df_ts.index, y=df_ts['in_sample_mre'],
-                mode='lines', name='Error (MRE)',
-                line=dict(color='#FF4B4B', width=1.5)
+                x=df_ts.index, y=df_ts['calibration_mre'],
+                mode='lines', name='Calibration Error (MRE)',
+                line=dict(color='#FFFFFF', width=1.5)
             ))
 
-            # Plot 3: Out-of-Sample MRE (highlighted)
-            # fig_ts.add_trace(go.Scatter(
-            #     x=df_ts.index, y=df_ts['out_sample_mre'],
-            #     mode='lines', name='Out-of-Sample Error (MRE)',
-            #     line=dict(color='#FF4B4B', width=2)
-            # ))
+            # Plot 3: Validation MRE (highlighted)
+            fig_ts.add_trace(go.Scatter(
+                x=df_ts.index, y=df_ts['validation_mre'],
+                mode='lines', name='Validation Error(MRE)',
+                line=dict(color='#FF4B4B', width=2)
+            ))
             
             events = [
                 {"date": "2018-02-05", "text": "Volmageddon"},
@@ -431,7 +431,7 @@ with tab2:
             st.markdown(
                 f"""
                 #### Key Findings:
-                *   **Robustness:** The DDN maintained an average MRE of <span class='highlight'>4.48%</span> over 7 years.
+                *   **Robustness:** The DDN maintained an average validation MRE of <span class='highlight'>4.34%</span> over 7 years.
                 *   **Correlation:** Calibration error spikes align with stress events (e.g., <span class='highlight'>COVID-19</span>).
                 *   **Mean Reversion:** Error is <span class='highlight'>bounded</span> (<15% max) and reverts quickly after crashes, proving robustness.
                 """, unsafe_allow_html=True
@@ -486,9 +486,9 @@ with tab2:
             validation_data = {
                 "Market Regime": ["Pre-Volmageddon", "Trade War", "COVID Crash", "Recovery", "Inflation", "Overall Average"],
                 "Period": ["Jan 2016 - Jan 2018", "Feb 2018 - Jan 2020", "Feb 2020 - May 2020", "Jun 2020 - Dec 2021", "Jan 2022 - Dec 2023", "Jan 2016 - Dec 2023"],
-                "DDN MRE (%)": [4.59, 4.47, 5.60, 4.63, 3.75, 4.48],
-                "True Heston MRE (%)": [5.04, 5.06, 5.59, 5.01, 4.05, 4.87],
-                "Difference (p.p.)": [0.45, 0.59, -0.01, 0.38, 0.30, 0.39]
+                "DDN MRE (%)": [4.47, 4.37, 5.33, 4.37, 3.69, 4.33],
+                "True Heston MRE (%)": [5.17, 5.25, 5.38, 4.96, 4.03, 4.90],
+                "Difference (p.p.)": [0.70, 0.88, 0.05, 0.59, 0.34, 0.57]
             }
             
             df_validation = pd.DataFrame(validation_data).set_index("Market Regime")
@@ -504,7 +504,7 @@ with tab2:
             st.dataframe(styled_df, use_container_width=True)
 
             st.caption("""
-            **Result:** The average difference is just <span class='highlight'>0.39 p.p.</span> The DDN is a high-fidelity emulator that introduces negligible error.
+            **Result:** The average difference is just <span class='highlight'>0.57 p.p.</span> The DDN is a high-fidelity emulator that introduces negligible error.
             """, unsafe_allow_html=True)
             
         # -------------------------------------------------------------------------
@@ -614,31 +614,19 @@ with tab3:
             "question": "How does the calibration error behave during diverse regimes?",
             "finding_header": "Longitudinal Stability",
             "finding_body": """
-            **Regime Resilience.** Calibration error remained bounded during the COVID-19 exogenous shock (Avg MRE: 5.59%) and exhibited rapid mean reversion post-crisis.
+            **Regime Resilience.** Calibration error remained bounded during the COVID-19 exogenous shock (Avg validation MRE: 5.33%) and exhibited rapid mean reversion post-crisis.
             """,
             "implication_header": "Operational Viability",
             "implication_body": """
             **Stable Deployment.** The framework demonstrates consistent performance across diverse market conditions, supporting its suitability for continuous historical analysis.
             """
         },
-        # {
-        #     "id": "2",
-        #     "question": "Error Dynamics?",
-        #     "finding_header": "Error Determinants",
-        #     "finding_body": """
-        #     **Impact of Market Stress.** MRE increase during phases of market stress such as the COVID-19 crash.
-        #     """,
-        #     "implication_header": "Performance Monitoring",
-        #     "implication_body": """
-        #     **Systematic Behavior.** Understanding error dynamics enables proactive monitoring and adjustment of calibration strategies during volatile periods.
-        #     """
-        # },
         {
             "id": "2",
             "question": "Does the approach produce suiteable parameters?",
             "finding_header": "Suitable Parameters",
             "finding_body": """
-            **Suiteable Parameters.** The average pricing error of 4.87% using the generated parameters confirms the DDN generates valid Heston parameters.
+            **Suiteable Parameters.** The average pricing error of 4.90% using the generated parameters confirms the DDN generates valid Heston parameters.
             """,
             "implication_header": "Speedup Calibration",
             "implication_body": """
