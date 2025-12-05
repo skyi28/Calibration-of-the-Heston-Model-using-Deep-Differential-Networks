@@ -91,8 +91,8 @@ def plot_1_stress_test(results_df):
     fig, ax1 = plt.subplots(figsize=(12, 6))
     
     # MRE Lines
-    ax1.plot(df.index, df['out_sample_mre'], color=COLORS[1], label='Out-of-Sample MRE', linewidth=1.5, alpha=0.9)
-    ax1.plot(df.index, df['in_sample_mre'], color=COLORS[0], label='In-Sample MRE', linewidth=1, linestyle='--', alpha=0.6)
+    ax1.plot(df.index, df['validation_mre'], color=COLORS[1], label='Validation MRE', linewidth=1.5, alpha=0.9)
+    ax1.plot(df.index, df['calibration_mre'], color=COLORS[0], label='Calibration MRE', linewidth=1, linestyle='--', alpha=0.6)
     ax1.set_ylabel('Mean Relative Error (MRE)', color='black', fontsize=12)
     ax1.set_ylim(0, 0.20)
     
@@ -129,14 +129,14 @@ def plot_2_rate_sensitivity(results_df):
     print("Generating Plot 2: Rate Sensitivity...")
     plt.figure(figsize=(8, 6))
     
-    sns.scatterplot(data=results_df, x='avg_risk_free_rate', y='out_sample_mre', 
+    sns.scatterplot(data=results_df, x='avg_risk_free_rate', y='validation_mre', 
                     color=COLORS[0], alpha=0.5, edgecolor='w', s=40)
     
-    sns.regplot(data=results_df, x='avg_risk_free_rate', y='out_sample_mre', 
+    sns.regplot(data=results_df, x='avg_risk_free_rate', y='validation_mre', 
                 scatter=False, color=COLORS[1], line_kws={'linewidth': 2})
     
     plt.xlabel("Implied Risk-Free Rate (r - q)")
-    plt.ylabel("Out-of-Sample MRE")
+    plt.ylabel("Validation MRE")
     plt.title("Model Stability across Interest Rate Regimes")
     plt.ylim(0, 0.20)
     plt.tight_layout()
@@ -175,7 +175,7 @@ def plot_3_price_fit_panel(results_df, model, sx, sy):
     day_df['log_moneyness'] = np.log(day_df['K'] / day_df['S0'])
     
     # Filter
-    day_df = day_df[(day_df['marketPrice'] > 0.1) & (day_df['tau'] > 0.02)].copy()
+    day_df = day_df[(day_df['marketPrice'] >= config.MIN_OPTION_PRICE) & (day_df['tau'] >= config.BACKTEST_MIN_TAU)].copy()
     day_df['modelPrice'] = predict_prices(model, day_df, params, sx, sy)
     
     # Select 6 distinct maturities
@@ -254,7 +254,7 @@ def plot_4_heatmaps(results_df, model, sx, sy):
             scatter_data_market.extend(calls['marketPrice'].values)
             scatter_data_model.extend(calls['modelPrice'].values)
 
-        # 2. PUTS (Parity: P = C - S + K*exp(-rT))
+        # 2. PUTS (Parity: P = C - S*exp(-qT) + K*exp(-rT))
         # Note: We use the SAME 'modelPrice' (Call) to derive Put Price
         if 'P_BID' in day_df.columns:
             puts = day_df.copy()
@@ -319,7 +319,7 @@ def plot_5_regression(results_df, scatter_mkt, scatter_mod):
     # --- Subplot 1: In-Sample vs Out-Sample ---
     ax = axes[0]
     max_val = 0.15
-    sns.scatterplot(x=results_df['in_sample_mre'], y=results_df['out_sample_mre'], 
+    sns.scatterplot(x=results_df['calibration_mre'], y=results_df['validation_mre'], 
                     ax=ax, color=COLORS[0], alpha=0.6, edgecolor='w')
     
     # 45 degree line
@@ -327,8 +327,8 @@ def plot_5_regression(results_df, scatter_mkt, scatter_mod):
     
     ax.set_xlim(0, max_val)
     ax.set_ylim(0, max_val)
-    ax.set_xlabel("In-Sample MRE")
-    ax.set_ylabel("Out-of-Sample MRE")
+    ax.set_xlabel("Calibration MRE")
+    ax.set_ylabel("Validation MRE")
     ax.set_title("Generalization Gap Analysis")
     ax.legend()
     
@@ -400,7 +400,7 @@ def generate_table_1(results_df):
     results_df['Regime'] = pd.cut(results_df.index, bins=bins, labels=labels)
     
     table = results_df.groupby('Regime', observed=True).agg({
-        'out_sample_mre': ['mean', 'std'],
+        'validation_mre': ['mean', 'std'],
         'kappa': 'std',
         'lambda': 'std',
         'sigma': 'std',
@@ -422,7 +422,7 @@ def main():
     df = pd.read_csv(config.BACKTEST_OUTPUT_FILE)
     df.columns = df.columns.str.strip() # Fix whitespace
     
-    required = ['date', 'in_sample_mre', 'out_sample_mre', 'avg_risk_free_rate', 'implied_dividend_yield', 'kappa', 'lambda', 'sigma', 'rho', 'v0']
+    required = ['date', 'calibration_mre', 'validation_mre', 'avg_risk_free_rate', 'implied_dividend_yield', 'kappa', 'lambda', 'sigma', 'rho', 'v0']
     if not all(c in df.columns for c in required):
         raise ValueError(f"Missing cols. Have: {df.columns.tolist()}")
 

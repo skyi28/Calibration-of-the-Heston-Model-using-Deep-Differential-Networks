@@ -214,7 +214,7 @@ def main():
             'date': date,
             'regime': regime,
             'true_heston_mre': true_mre,
-            'surrogate_mre': row['out_sample_mre'] # Keep for comparison
+            'surrogate_mre': row['validation_mre'] # Keep for comparison
         })
     
     # 4. Report Results
@@ -236,7 +236,6 @@ def main():
     print("-" * 73)
 
 
-    # --- The rest of the script (overall average calculation) can be updated too ---
     # Overall average
     overall_avg_true_mre = final_df['true_heston_mre'].mean()
     overall_avg_surrogate_mre = final_df['surrogate_mre'].mean() # Calculate this as well

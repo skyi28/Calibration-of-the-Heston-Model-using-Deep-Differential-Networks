@@ -341,7 +341,7 @@ To validate the performance of the trained \ac{ddn} in a realistic setting, a co
     \end{equation}
     This approach explicitly decouples the risk-free rate from the dividend yield, ensuring that the model correctly handles both the drift adjustment and the discounting of payoffs.
 
-    \item \textit{Data Partitioning:} On each trading day, the filtered option chain was independently partitioned into a calibration set (80\% of contracts) and a held-out test set (20\%) by sampling the options randomly.
+    \item \textit{Data Partitioning:} On each trading day, the filtered option chain was independently partitioned into a calibration set (80\% of contracts) and a held-out validation set (20\%) by sampling the options randomly.
 
     \item \textit{Optimization:} The Heston parameters were calibrated by minimizing the pricing error on the calibration set. The \ac{ddn} served as the surrogate pricing engine within a \texttt{scipy.optimize.minimize} routine, which employed the L-BFGS-B algorithm. The \ac{ddn} supplied both the objective function value and its exact analytical Jacobian (the "Neural Greeks") to the optimizer, enabling rapid convergence.
 
@@ -361,7 +361,7 @@ The primary metric for evaluating the accuracy of the daily calibration is the \
         \toprule
         Symbol & Description \\
         \midrule
-        $r_{\text{implied}}$ & The implied risk-free rate net of dividend yield. \\
+        $r_{\text{implied}}$ & The risk-free rate. \\
         $P_{\text{market}}$ & The observed market price of a European put option. \\
         $MRE$ & \ac{mre}. \\
         $M$ & The total number of options in the evaluation set. \\

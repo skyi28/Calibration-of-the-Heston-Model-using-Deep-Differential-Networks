@@ -457,22 +457,22 @@ def main() -> None:
                 continue
                 
             # Split Data: Calibration (Train) vs Generalization (Test)
-            train_df, test_df = train_test_split(df_liquid, test_size=config.TEST_SET_SIZE, random_state=42)
+            calibration_df, validation_df = train_test_split(df_liquid, test_size=config.TEST_SET_SIZE, random_state=42)
             
             # Optimization Step
-            params = calibrate(train_df, model, sx, sy)
+            params = calibrate(calibration_df, model, sx, sy)
             if params is None:
                 continue 
             
             # Evaluation Step
-            train_mre = calculate_mre(params, train_df, model, sx, sy)
-            test_mre = calculate_mre(params, test_df, model, sx, sy)
+            calibration_mre = calculate_mre(params, calibration_df, model, sx, sy)
+            validation_mre = calculate_mre(params, validation_df, model, sx, sy)
             
             avg_r_day = df_liquid['r'].mean() # Log the average interpolated rate for the day
             results.append({
                 'date': date,
-                'in_sample_mre': train_mre,
-                'out_sample_mre': test_mre,
+                'calibration_mre': calibration_mre,
+                'validation_mre': validation_mre,
                 'avg_risk_free_rate': avg_r_day,
                 'implied_dividend_yield': dividend_yield,
                 'kappa': params[0], 
@@ -480,7 +480,8 @@ def main() -> None:
                 'sigma': params[2], 
                 'rho': params[3], 
                 'v0': params[4],
-                'n_train': len(train_df)
+                'n_calibrate': len(calibration_df),
+                'n_validate': len(validation_df)
             })
         except Exception:
             continue
@@ -493,8 +494,8 @@ def main() -> None:
     if not res_df.empty:
         print("\n--- FINAL PERFORMANCE SUMMARY ---")
         print(f"Total Days Processed:     {len(res_df)}")
-        print(f"Avg In-Sample MRE:        {res_df['in_sample_mre'].mean():.4f} (Paper/Target: < 0.06)")
-        print(f"Avg Out-of-Sample MRE:    {res_df['out_sample_mre'].mean():.4f}")
+        print(f"Avg Calibration MRE:      {res_df['calibration_mre'].mean():.4f} (Paper/Target: < 0.06)")
+        print(f"Avg Validation MRE:       {res_df['validation_mre'].mean():.4f}")
         print("---------------------------------")
 
 if __name__ == "__main__":
